@@ -20,8 +20,12 @@ public class UserRepository : IUserRepository
         return user;
     }
 
-    public async Task<User?> FindByIdAsync(int id)
+    public async Task<User?> GetByIdAsync(int id)
 {
     return await _db.Users.FindAsync(id);
 }
+    public async Task<User?> FindByEmailAsync(string email)
+    {
+        return _db.Users.FirstOrDefault(u=> u.Email == email);
+    }
 }

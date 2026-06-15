@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Models;
 using SprintBoard.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SprintBoard.Api.Controllers;
 
@@ -16,14 +17,9 @@ public class UserController : ControllerBase
         _userService = userService;
     }
 
-    [HttpPost("register")]
-    public async Task<ActionResult<UserDto>> Register(RegisterDto dto)
-    {
-        var user = await _userService.CreateFromEmailAsync(dto);
-        return CreatedAtAction(nameof(Register), new { id = user.Id }, user);
-
-    }
+    
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<ActionResult<UserDto>> FindById(int id)
   {
     var user = await _userService.GetByIdAsync(id);
