@@ -1,9 +1,41 @@
 import { Link } from "react-router-dom";
 import Button from "../Button";
-
+import { useState } from "react";
+import React from "react";
+import { loginUser } from "../../services/authService";
+import type { LoginData } from "../../types/auth";
 function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    const data: LoginData = {
+      email,
+      password,
+    };
+    try {
+      const response = await loginUser(data);
+      console.log(response);
+    } catch {
+      setError("Invalid Email or Password. ");
+    }
+  }
+
   return (
-    <form className="flex w-full max-w-md flex-col gap-4 rounded-xl bg-surface p-8 shadow-sm">
+    <form
+      onSubmit={handleSubmit}
+      className="flex w-full max-w-md flex-col gap-4 rounded-xl bg-surface p-8 shadow-sm"
+    >
+      {error && (
+        <div
+          role="alert"
+          className="login-error rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {error}
+        </div>
+      )}
       <div>
         <label
           htmlFor="email"
@@ -13,12 +45,16 @@ function LoginForm() {
         </label>
 
         <input
+          onChange={(e) => {
+            setEmail(e.target.value);
+          }}
           type="email"
           id="email"
           name="email"
           autoComplete="email"
           required
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          value={email}
         />
       </div>
 
@@ -31,12 +67,16 @@ function LoginForm() {
         </label>
 
         <input
+          onChange={(e) => {
+            setPassword(e.target.value);
+          }}
           type="password"
           id="password"
           name="password"
           autoComplete="current-password"
           required
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          value={password}
         />
       </div>
 

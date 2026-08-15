@@ -10,11 +10,11 @@ function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
+  const [error, setError] = useState("");
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (password !== confirmPassword) {
-      console.log("Passwords don't match");
+      setError("Passwords don't match");
       return;
     }
     const data: RegisterData = {
@@ -35,6 +35,14 @@ function RegisterForm() {
       onSubmit={handleSubmit}
       className="flex w-full max-w-md flex-col gap-4 rounded-xl bg-surface p-8 shadow-sm"
     >
+      {error && (
+        <div
+          role="alert"
+          className="password-error rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {error}
+        </div>
+      )}
       <div>
         <label
           htmlFor="name"
