@@ -26,6 +26,18 @@ public class UserRepository : IUserRepository
 }
     public async Task<User?> FindByEmailAsync(string email)
     {
-        return _db.Users.FirstOrDefault(u=> u.Email == email);
+        return await _db.Users.FirstOrDefaultAsync(u=> u.Email == email);
     }
+
+    public async Task<User?> FindByGoogleIdAsync(string googleId)
+{
+    return await _db.Users
+        .FirstOrDefaultAsync(u => u.GoogleId == googleId);
+}
+
+public async Task UpdateAsync(User user)
+{
+    _db.Users.Update(user);
+    await _db.SaveChangesAsync();
+}
 }

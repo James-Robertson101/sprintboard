@@ -80,6 +80,45 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public async Task<AuthResponseDto> LoginWithGoogleAsync(string googleId, string email,string name)
+{
+    var user = await _users.FindByGoogleIdAsync(googleId);
+
+    if (user is null)
+    {
+        user = await _users.FindByEmailAsync(email);
+
+        if (user is not null)
+        {
+            // Existing account with same email.
+            // Link the Google account.
+            user.GoogleId = googleId;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _users.UpdateAsync(user);
+        }
+        else
+        {
+            // Completely new Google user.
+            user = new User
+            {
+                Name = name,
+                Email = email,
+                GoogleId = googleId,
+                PasswordHash = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _users.CreateAsync(user);
+        }
+    }
+
+    var token = GenerateJwt(user);
+
+    return new AuthResponseDto(token, MapToDto(user));
+}
+
     private static UserDto MapToDto(User user) =>
         new(user.Id, user.Email, user.Name, user.AvatarUrl, user.Role);
 }
