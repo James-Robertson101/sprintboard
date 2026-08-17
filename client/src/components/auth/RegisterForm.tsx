@@ -2,10 +2,12 @@ import { Link } from "react-router-dom";
 import Button from "../Button";
 import { useState } from "react";
 import React from "react";
-import { registerUser } from "../../services/authService";
+import { registerUser, handleGoogleLogin } from "../../services/authService";
 import type { RegisterData } from "../../types/auth";
+import { useNavigate } from "react-router-dom";
 
 function RegisterForm() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,6 +15,7 @@ function RegisterForm() {
   const [error, setError] = useState("");
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     if (password !== confirmPassword) {
       setError("Passwords don't match");
       return;
@@ -24,12 +27,25 @@ function RegisterForm() {
     };
 
     try {
-      const response = await registerUser(data);
-      console.log(response);
+      await registerUser(data);
+      navigate("/projectList");
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : "Registration failed.");
     }
   }
+
+  function handleGoogleClick() {
+    try {
+      handleGoogleLogin();
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to connect to the server.",
+      );
+    }
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -145,6 +161,7 @@ function RegisterForm() {
 
       <button
         type="button"
+        onClick={handleGoogleClick}
         className="flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface px-4 py-2.5 font-medium text-text transition hover:bg-slate-50"
       >
         <span className="text-lg font-semibold">G</span>

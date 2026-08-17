@@ -1,40 +1,43 @@
-// Controllers/AuthController.cs
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
-using System.Security.Claims;
-namespace SprintBoard.Api.Controllers;
 
+namespace SprintBoard.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _auth;
-    public AuthController(IAuthService auth) => _auth = auth;
+    private readonly IUserService _userService;
+    private readonly IConfiguration _config;
 
-    [HttpPost("register")]
-    public async Task<ActionResult<AuthResponseDto>> Register(RegisterDto dto)
+    public AuthController(
+        IAuthService auth,
+        IUserService userService,
+        IConfiguration config)
     {
-        try
-        {
-            var result = await _auth.RegisterAsync(dto);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
+        _auth = auth;
+        _userService = userService;
+        _config = config;
     }
 
-    [HttpPost("login")]
-    public async Task<ActionResult<AuthResponseDto>> Login(LoginDto dto)
+    [AllowAnonymous]
+    [HttpPost("register")]
+    public async Task<ActionResult<UserDto>> Register(RegisterDto dto)
     {
         try
         {
-            var (token,user) = await _auth.LoginAsync(dto);
+            var (token, user) = await _auth.RegisterAsync(dto);
+
+            var expiry = DateTimeOffset.UtcNow.AddHours(
+                double.Parse(_config["Jwt:ExpiryHours"]!)
+            );
+
             Response.Cookies.Append(
                 "access_token",
                 token,
@@ -43,18 +46,43 @@ public class AuthController : ControllerBase
                     HttpOnly = true,
                     Secure = true,
                     SameSite = SameSiteMode.Lax,
-                    Expires = DateTimeOffset.UtcNow.AddMinutes(5),
+                    Expires = expiry,
                     Path = "/"
                 });
-                
-                var userDto = new UserDto(
-                user.Id,
-                user.Name,
-                user.Email,
-                user.AvatarUrl,
-                user.Role
-                );
-            return Ok(userDto);
+
+            return Ok(user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    [AllowAnonymous]
+    [HttpPost("login")]
+    public async Task<ActionResult<UserDto>> Login(LoginDto dto)
+    {
+        try
+        {
+            var (token, user) = await _auth.LoginAsync(dto);
+
+            var expiry = DateTimeOffset.UtcNow.AddHours(
+                double.Parse(_config["Jwt:ExpiryHours"]!)
+            );
+
+            Response.Cookies.Append(
+                "access_token",
+                token,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = expiry,
+                    Path = "/"
+                });
+
+            return Ok(user);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -62,70 +90,99 @@ public class AuthController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
     [HttpGet("google")]
-public IActionResult GoogleLogin()
-{
-    var properties = new AuthenticationProperties
+    public IActionResult GoogleLogin()
     {
-        RedirectUri = Url.Action(
-            nameof(GoogleComplete),
-            "Auth")
-    };
-
-    return Challenge(
-        properties,
-        GoogleDefaults.AuthenticationScheme);
-}
-
-
-[HttpGet("google/complete")]
-public async Task<IActionResult> GoogleComplete()
-{
-    var result = await HttpContext.AuthenticateAsync(
-        "GoogleTemporary");
-
-    if (!result.Succeeded || result.Principal is null)
-    {
-        return Unauthorized();
-    }
-
-    var claims = result.Principal.Claims;
-
-    var googleId = claims
-        .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)
-        ?.Value;
-
-    var email = claims
-        .FirstOrDefault(c => c.Type == ClaimTypes.Email)
-        ?.Value;
-
-    var name = claims
-        .FirstOrDefault(c => c.Type == ClaimTypes.Name)
-        ?.Value;
-
-    if (googleId is null || email is null || name is null)
-    {
-        return Unauthorized(
-            "Google account information was incomplete.");
-    }
-
-    var authResponse = await _auth.LoginWithGoogleAsync(
-        googleId,
-        email,
-        name);
-
-    Response.Cookies.Append(
-        "access_token",
-        authResponse.Token,
-        new CookieOptions
+        var properties = new AuthenticationProperties
         {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-            Expires = DateTimeOffset.UtcNow.AddMinutes(5),
-            Path = "/"
-        });
+            RedirectUri = Url.Action(
+                nameof(GoogleComplete),
+                "Auth")
+        };
 
-    return Ok(authResponse.User);
-}
+        return Challenge(
+            properties,
+            GoogleDefaults.AuthenticationScheme);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("google/complete")]
+    public async Task<IActionResult> GoogleComplete()
+    {
+        var result = await HttpContext.AuthenticateAsync(
+            "GoogleTemporary");
+
+        if (!result.Succeeded || result.Principal is null)
+        {
+            return Unauthorized();
+        }
+
+        var claims = result.Principal.Claims;
+
+        var googleId = claims
+            .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)
+            ?.Value;
+
+        var email = claims
+            .FirstOrDefault(c => c.Type == ClaimTypes.Email)
+            ?.Value;
+
+        var name = claims
+            .FirstOrDefault(c => c.Type == ClaimTypes.Name)
+            ?.Value;
+
+        if (googleId is null || email is null || name is null)
+        {
+            return Unauthorized(
+                "Google account information was incomplete.");
+        }
+
+        var (token, user) = await _auth.LoginWithGoogleAsync(
+            googleId,
+            email,
+            name);
+
+        var expiry = DateTimeOffset.UtcNow.AddHours(
+            double.Parse(_config["Jwt:ExpiryHours"]!)
+        );
+
+        Response.Cookies.Append(
+            "access_token",
+            token,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = expiry,
+                Path = "/"
+            });
+            var frontendUrl = _config["FrontendUrl"];
+
+        return Redirect($"{frontendUrl}/projectList");
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<UserDto>> Me()
+    {
+        var userIdClaim = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null ||
+            !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userService.GetByIdAsync(userId);
+
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(user);
+    }
 }

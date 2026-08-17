@@ -2,9 +2,12 @@ import { Link } from "react-router-dom";
 import Button from "../Button";
 import { useState } from "react";
 import React from "react";
-import { loginUser } from "../../services/authService";
+import { loginUser, handleGoogleLogin } from "../../services/authService";
 import type { LoginData } from "../../types/auth";
+import { useNavigate } from "react-router-dom";
+
 function LoginForm() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,10 +19,22 @@ function LoginForm() {
       password,
     };
     try {
-      const response = await loginUser(data);
-      console.log(response);
+      await loginUser(data);
+      navigate("/projectList");
     } catch {
       setError("Invalid Email or Password. ");
+    }
+  }
+
+  function handleGoogleClick() {
+    try {
+      handleGoogleLogin();
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to connect to the server.",
+      );
     }
   }
 
@@ -102,6 +117,7 @@ function LoginForm() {
 
       <button
         type="button"
+        onClick={handleGoogleClick}
         className="flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface px-4 py-2.5 font-medium text-text transition hover:bg-slate-50"
       >
         <span className="text-lg font-semibold">G</span>
