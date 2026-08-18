@@ -10,5 +10,6 @@ public class User
   public string? AvatarUrl { get; set; }
   public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
   public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+  public List<ProjectMember> ProjectMembers {get; set;} = new();
 
 }

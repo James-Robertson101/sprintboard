@@ -142,7 +142,7 @@ public class AuthController : ControllerBase
             googleId,
             email,
             name);
-
+        await HttpContext.SignOutAsync("GoogleTemporary");
         var expiry = DateTimeOffset.UtcNow.AddHours(
             double.Parse(_config["Jwt:ExpiryHours"]!)
         );

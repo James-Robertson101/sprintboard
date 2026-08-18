@@ -5,19 +5,22 @@ using Microsoft.IdentityModel.Tokens;
 using SprintBoard.Api.Data;
 using SprintBoard.Api.Repositories;
 using SprintBoard.Api.Services;
+using SprintBoard.Api.Data.Interceptors;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddScoped<TimestampInterceptor>(); 
+builder.Services.AddDbContext<AppDbContext>((sp,options) =>
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString("Supabase")));
+        builder.Configuration.GetConnectionString("Supabase"))
+        .AddInterceptors(sp.GetRequiredService<TimestampInterceptor>()));
         
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins("https://localhost:5173")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
