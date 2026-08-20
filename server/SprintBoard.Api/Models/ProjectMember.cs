@@ -11,5 +11,5 @@ public class ProjectMember
   public DateTime? RemovedTime {get;set; }
   public User? InvitedByUser {get;set; }
   public int? InvitedByUserId {get; set;}
-  public byte[] RowVersion { get; set; } = null!;
+  public uint RowVersion { get; set; }
 }

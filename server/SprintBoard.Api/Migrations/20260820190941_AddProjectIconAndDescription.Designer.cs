@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SprintBoard.Api.Data;
@@ -11,9 +12,11 @@ using SprintBoard.Api.Data;
 namespace SprintBoard.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260820190941_AddProjectIconAndDescription")]
+    partial class AddProjectIconAndDescription
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -68,11 +71,9 @@ namespace SprintBoard.Api.Migrations
                     b.Property<DateTime?>("RemovedTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<uint>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                    b.Property<byte[]>("RowVersion")
+                        .IsRequired()
+                        .HasColumnType("bytea");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
