@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Services;
-
+using SprintBoard.Api.Exceptions;
 namespace SprintBoard.Api.Controllers;
 
 [ApiController]
@@ -50,7 +50,45 @@ public class ProjectController : ControllerBase
         catch(Exception e)
         {
             Console.WriteLine(e.Message);
-            return StatusCode(500, "an Error occured whilst fetching projects.");
+            return StatusCode(404, "an Error occured whilst fetching projects.");
         }
     }
+
+[Authorize]
+[HttpGet("{id}")]
+public async Task<ActionResult<ProjectDto>> GetProjectById(int id)
+{
+    try
+    {
+        var userId = User.GetUserId();
+        var response = await _projectService.GetProjectByIdAsync(id, userId);
+        return Ok(response);
+    }
+    catch (NotFoundException)
+    {
+        return NotFound();
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e.Message);
+        return StatusCode(500, "An error occurred while fetching the project.");
+    }
+}
+
+    // [Authorize]
+    // [HttpDelete("{id}")]
+    // public async Task<ActionResult> DeleteProjectAsync(int projectId)
+    // {
+    //     try
+    //     {
+    //         var userId = User.GetUserId();
+    //         var response = await _projectService.DeleteProjectAsync(userId, projectId);
+    //     }
+    //     catch(Exception e)
+    //     {
+    //         Console.WriteLine(e.Message);
+    //         return StatusCode(400, "Project couldn't be deleted");
+    //     }
+
+    // }
 }

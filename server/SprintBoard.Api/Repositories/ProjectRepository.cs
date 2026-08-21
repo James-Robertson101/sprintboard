@@ -36,4 +36,11 @@ public class ProjectRepository : IProjectRepository
         .ToListAsync();
         return projects;
     }
+
+    public async Task<Project?> GetProjectByIdAsync(int projectId)
+{
+    return await _db.Projects
+        .Include(p => p.ProjectMembers)
+        .FirstOrDefaultAsync(p => p.Id == projectId);
+}
 }
