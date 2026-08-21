@@ -186,5 +186,18 @@ public class AuthController : ControllerBase
         return Ok(user);
     }
     
+    [Authorize]
+    [HttpPost("Logout")]
+    public IActionResult Logout()
+    {
+        Response.Cookies.Delete("access_token", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Path = "/"
+        });
 
+        return NoContent();
+}
 }
