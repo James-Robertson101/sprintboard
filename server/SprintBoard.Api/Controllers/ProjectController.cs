@@ -75,20 +75,21 @@ public async Task<ActionResult<ProjectDto>> GetProjectById(int id)
     }
 }
 
-    // [Authorize]
-    // [HttpDelete("{id}")]
-    // public async Task<ActionResult> DeleteProjectAsync(int projectId)
-    // {
-    //     try
-    //     {
-    //         var userId = User.GetUserId();
-    //         var response = await _projectService.DeleteProjectAsync(userId, projectId);
-    //     }
-    //     catch(Exception e)
-    //     {
-    //         Console.WriteLine(e.Message);
-    //         return StatusCode(400, "Project couldn't be deleted");
-    //     }
+    [Authorize]
+    [HttpDelete("{projectId}")]
+    public async Task<ActionResult> DeleteProjectAsync(int projectId)
+    {
+        try
+        {
+            var userId = User.GetUserId();
+            await _projectService.DeleteProjectAsync(userId, projectId);
+            return NoContent();
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return StatusCode(400, "Project couldn't be deleted");
+        }
 
-    // }
+    }
 }

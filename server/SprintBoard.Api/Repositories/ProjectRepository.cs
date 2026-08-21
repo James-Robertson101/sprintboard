@@ -43,4 +43,10 @@ public class ProjectRepository : IProjectRepository
         .Include(p => p.ProjectMembers)
         .FirstOrDefaultAsync(p => p.Id == projectId);
 }
+
+    public async Task DeleteProjectAsync(Project project)
+    {
+        _db.Projects.Remove(project);
+        await _db.SaveChangesAsync();
+    }
 }

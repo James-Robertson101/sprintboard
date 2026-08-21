@@ -49,11 +49,28 @@ public class ProjectService : IProjectService
         return MapToDto(project); //return ProjectDto
     }
 
-    // public async Task DeleteProjectAsync(int userId, int projectId)
-    // {
-    //     var response = await _projectRepository.DeleteProjectAsync(userId, projectId);
-    //     return response;    
-    // }
+public async Task DeleteProjectAsync(int userId, int projectId)
+{
+    var project = await _projectRepository.GetProjectByIdAsync(projectId)
+        ?? throw new NotFoundException("Project could not be found");
+
+    var member = project.ProjectMembers
+        .FirstOrDefault(m => m.UserId == userId);
+
+    if (member == null)
+    {
+        throw new ForbiddenException(
+            "You do not have permission to delete this project");
+    }
+
+    if (member.ProjectRole != ProjectRole.Owner)
+    {
+        throw new ForbiddenException(
+            "You do not have permission to delete this project");
+    }
+
+    await _projectRepository.DeleteProjectAsync(project);
+}
 
     private static ProjectDto MapToDto(Project project) =>
         new(
