@@ -17,7 +17,7 @@ public class ProjectController : ControllerBase
     }
 
     [Authorize]
-    [HttpPost]
+    [HttpPost("CreateProject")]
     public async Task<ActionResult<ProjectDto>> CreateProject(ProjectDto projectDto)
     {
         try
@@ -34,6 +34,23 @@ public class ProjectController : ControllerBase
         {
             Console.WriteLine(e.Message);
             return StatusCode(500, "An error occurred while creating the project.");
+        }
+    }
+    [Authorize]
+    [HttpGet("MyProjects")]
+    public async Task<ActionResult<List<ProjectDto>>> GetUserProjectsAsync()
+    {
+        try
+        {
+            var userId = User.GetUserId();
+            var response = await _projectService.GetUserProjectsAsync(userId);
+            Console.WriteLine(response);
+            return response;
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return StatusCode(500, "an Error occured whilst fetching projects.");
         }
     }
 }

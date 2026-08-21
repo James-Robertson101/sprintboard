@@ -1,11 +1,11 @@
-namespace SprintBoard.API.Repositories;
+namespace SprintBoard.Api.Repositories;
 using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Models;
 
 public interface IProjectRepository
 {
   Task<Project> CreateProjectAsync(int userId, Project project);
-  //public Task<List<ProjectDto>> getUserProjectsAsync(int UserId);
+  Task<List<Project>> GetUserProjectsAsync(int UserId);
   //public Task DeleteProjectAsync(ProjectDto project);
   //public Task UpdateProjectAsync(ProjectDto project);
   //public Task<ProjectDto> FindByID(int id);

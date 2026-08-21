@@ -6,7 +6,7 @@ using SprintBoard.Api.Data;
 using SprintBoard.Api.Repositories;
 using SprintBoard.Api.Services;
 using SprintBoard.Api.Data.Interceptors;
-using SprintBoard.API.Repositories;
+
 
 var builder = WebApplication.CreateBuilder(args);
 

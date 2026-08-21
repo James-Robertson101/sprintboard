@@ -1,7 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using SprintBoard.Api.Data;
 using SprintBoard.Api.Models;
 using SprintBoard.Api.Repositories;
-using SprintBoard.API.Repositories;
+
 
 namespace SprintBoard.Api.Repositories;
 
@@ -26,5 +27,13 @@ public class ProjectRepository : IProjectRepository
         _db.Projects.Add(project);
         await _db.SaveChangesAsync();
         return project;
+    }
+
+    public async Task<List<Project>> GetUserProjectsAsync(int userId)
+    {
+        var projects = await _db.Projects.Include(p => p.ProjectMembers).
+        Where(p => p.ProjectMembers.Any(pm => pm.UserId == userId))
+        .ToListAsync();
+        return projects;
     }
 }

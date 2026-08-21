@@ -1,7 +1,7 @@
 using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Models;
 using SprintBoard.Api.Repositories;
-using SprintBoard.API.Repositories;
+
 
 namespace SprintBoard.Api.Services;
 
@@ -25,6 +25,13 @@ public class ProjectService : IProjectService
 
         var created = await _projectRepository.CreateProjectAsync(userId, project);
         return MapToDto(created);
+    }
+    public async Task<List<ProjectDto>> GetUserProjectsAsync(int userId)
+    {   
+        var projects = await _projectRepository.GetUserProjectsAsync(userId);
+        if (projects == null)
+            return new List<ProjectDto>();
+        return projects.Select(MapToDto).ToList();
     }
 
     private static ProjectDto MapToDto(Project project) =>
