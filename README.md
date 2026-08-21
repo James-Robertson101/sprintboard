@@ -328,7 +328,7 @@ The frontend is being developed using:
 - [x] Login page
 - [x] Login page connected to authentication API
 - [x] Authentication using standard `async/await`
-- [ ] Registration page
+- [x] Registration page
 - [ ] Authentication state handling
 - [ ] Project list
 - [ ] Project dashboard

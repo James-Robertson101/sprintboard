@@ -15,13 +15,14 @@ builder.Services.AddDbContext<AppDbContext>((sp,options) =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("Supabase"))
         .AddInterceptors(sp.GetRequiredService<TimestampInterceptor>()));
-        
+
+var frontendUrl = builder.Configuration["FrontendUrl"];        
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
         policy
-            .WithOrigins("https://localhost:5173")
+            .WithOrigins(frontendUrl!)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
