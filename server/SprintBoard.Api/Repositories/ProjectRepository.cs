@@ -49,4 +49,10 @@ public class ProjectRepository : IProjectRepository
         _db.Projects.Remove(project);
         await _db.SaveChangesAsync();
     }
+
+public async Task<Project> UpdateProjectAsync(Project project)
+{
+    await _db.SaveChangesAsync();
+    return project;
+}
 }

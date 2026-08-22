@@ -72,6 +72,31 @@ public async Task DeleteProjectAsync(int userId, int projectId)
     await _projectRepository.DeleteProjectAsync(project);
 }
 
+public async Task<ProjectDto> UpdateProjectAsync(
+    int userId,
+    int projectId,
+    ProjectDto dto)
+{
+    var project = await _projectRepository.GetProjectByIdAsync(projectId)
+        ?? throw new NotFoundException("Project could not be found");
+
+    var member = project.ProjectMembers
+        .FirstOrDefault(m => m.UserId == userId);
+
+    if (member == null)
+    {
+        throw new ForbiddenException(
+            "You do not have permission to update this project");
+    }
+
+    project.Name = dto.Name;
+    project.Description = dto.Description;
+    project.Icon = dto.Icon;
+
+    var updated = await _projectRepository.UpdateProjectAsync(project);
+
+    return MapToDto(updated);
+}
     private static ProjectDto MapToDto(Project project) =>
         new(
             project.Name,

@@ -8,6 +8,5 @@ public interface IProjectService
   Task<List<ProjectDto>> GetUserProjectsAsync(int UserId);
   Task<ProjectDto> GetProjectByIdAsync(int projectId, int userId);
   Task DeleteProjectAsync(int userId, int projectId);
-  //Task UpdateProjectAsync(ProjectDto project);
-  //Task<ProjectDto> FindByID(int id);
+  Task<ProjectDto> UpdateProjectAsync(int userId, int projectId, ProjectDto dto);
 }

@@ -92,4 +92,38 @@ public async Task<ActionResult<ProjectDto>> GetProjectById(int id)
         }
 
     }
+
+    [Authorize]
+[HttpPut("{projectId}")]
+public async Task<ActionResult<ProjectDto>> UpdateProjectAsync(
+    int projectId,
+    ProjectDto projectDto)
+{
+    try
+    {
+        var userId = User.GetUserId();
+
+        var response = await _projectService.UpdateProjectAsync(
+            userId,
+            projectId,
+            projectDto);
+
+        return Ok(response);
+    }
+    catch (NotFoundException)
+    {
+        return NotFound();
+    }
+    catch (ForbiddenException)
+    {
+        return Forbid();
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e.Message);
+        return StatusCode(
+            500,
+            "An error occurred while updating the project.");
+    }
+}
 }
