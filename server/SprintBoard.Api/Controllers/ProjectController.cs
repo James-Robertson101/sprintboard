@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintBoard.Api.DTOs;
-using SprintBoard.Api.Services;
 using SprintBoard.Api.Exceptions;
+using SprintBoard.Api.Services;
+
 namespace SprintBoard.Api.Controllers;
 
 [ApiController]
@@ -18,12 +19,17 @@ public class ProjectController : ControllerBase
 
     [Authorize]
     [HttpPost("CreateProject")]
-    public async Task<ActionResult<ProjectDto>> CreateProject(ProjectDto projectDto)
+    public async Task<ActionResult<ProjectResponseDto>> CreateProject(
+        ProjectDto projectDto)
     {
         try
         {
             var userId = User.GetUserId();
-            var response = await _projectService.CreateProjectAsync(userId, projectDto);
+
+            var response = await _projectService.CreateProjectAsync(
+                userId,
+                projectDto);
+
             return Ok(response);
         }
         catch (UnauthorizedAccessException)
@@ -33,97 +39,127 @@ public class ProjectController : ControllerBase
         catch (Exception e)
         {
             Console.WriteLine(e.Message);
-            return StatusCode(500, "An error occurred while creating the project.");
+
+            return StatusCode(
+                500,
+                "An error occurred while creating the project.");
         }
     }
+
     [Authorize]
     [HttpGet("MyProjects")]
-    public async Task<ActionResult<List<ProjectDto>>> GetUserProjectsAsync()
+    public async Task<ActionResult<List<ProjectResponseDto>>> GetUserProjectsAsync()
     {
         try
         {
             var userId = User.GetUserId();
+
             var response = await _projectService.GetUserProjectsAsync(userId);
-            Console.WriteLine(response);
-            return response;
+
+            return Ok(response);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             Console.WriteLine(e.Message);
-            return StatusCode(404, "an Error occured whilst fetching projects.");
+
+            return StatusCode(
+                500,
+                "An error occurred whilst fetching projects.");
         }
     }
 
-[Authorize]
-[HttpGet("{id}")]
-public async Task<ActionResult<ProjectDto>> GetProjectById(int id)
-{
-    try
+    [Authorize]
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<ProjectResponseDto>> GetProjectById(int id)
     {
-        var userId = User.GetUserId();
-        var response = await _projectService.GetProjectByIdAsync(id, userId);
-        return Ok(response);
+        try
+        {
+            var userId = User.GetUserId();
+
+            var response = await _projectService.GetProjectByIdAsync(
+                id,
+                userId);
+
+            return Ok(response);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+
+            return StatusCode(
+                500,
+                "An error occurred while fetching the project.");
+        }
     }
-    catch (NotFoundException)
-    {
-        return NotFound();
-    }
-    catch (Exception e)
-    {
-        Console.WriteLine(e.Message);
-        return StatusCode(500, "An error occurred while fetching the project.");
-    }
-}
 
     [Authorize]
-    [HttpDelete("{projectId}")]
+    [HttpDelete("{projectId:int}")]
     public async Task<ActionResult> DeleteProjectAsync(int projectId)
     {
         try
         {
             var userId = User.GetUserId();
-            await _projectService.DeleteProjectAsync(userId, projectId);
+
+            await _projectService.DeleteProjectAsync(
+                userId,
+                projectId);
+
             return NoContent();
         }
-        catch(Exception e)
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ForbiddenException)
+        {
+            return Forbid();
+        }
+        catch (Exception e)
         {
             Console.WriteLine(e.Message);
-            return StatusCode(400, "Project couldn't be deleted");
-        }
 
+            return StatusCode(
+                500,
+                "An error occurred while deleting the project.");
+        }
     }
 
     [Authorize]
-[HttpPut("{projectId}")]
-public async Task<ActionResult<ProjectDto>> UpdateProjectAsync(
-    int projectId,
-    ProjectDto projectDto)
-{
-    try
+    [HttpPut("{projectId:int}")]
+    public async Task<ActionResult<ProjectResponseDto>> UpdateProjectAsync(
+        int projectId,
+        ProjectDto projectDto)
     {
-        var userId = User.GetUserId();
+        try
+        {
+            var userId = User.GetUserId();
 
-        var response = await _projectService.UpdateProjectAsync(
-            userId,
-            projectId,
-            projectDto);
+            var response = await _projectService.UpdateProjectAsync(
+                userId,
+                projectId,
+                projectDto);
 
-        return Ok(response);
+            return Ok(response);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ForbiddenException)
+        {
+            return Forbid();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+
+            return StatusCode(
+                500,
+                "An error occurred while updating the project.");
+        }
     }
-    catch (NotFoundException)
-    {
-        return NotFound();
-    }
-    catch (ForbiddenException)
-    {
-        return Forbid();
-    }
-    catch (Exception e)
-    {
-        Console.WriteLine(e.Message);
-        return StatusCode(
-            500,
-            "An error occurred while updating the project.");
-    }
-}
 }

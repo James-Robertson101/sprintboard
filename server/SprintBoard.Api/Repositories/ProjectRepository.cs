@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SprintBoard.Api.Data;
 using SprintBoard.Api.Models;
-using SprintBoard.Api.Repositories;
-
 
 namespace SprintBoard.Api.Repositories;
 
@@ -15,7 +13,9 @@ public class ProjectRepository : IProjectRepository
         _db = db;
     }
 
-    public async Task<Project> CreateProjectAsync(int userId, Project project)
+    public async Task<Project> CreateProjectAsync(
+        int userId,
+        Project project)
     {
         project.ProjectMembers.Add(new ProjectMember
         {
@@ -25,34 +25,42 @@ public class ProjectRepository : IProjectRepository
         });
 
         _db.Projects.Add(project);
+
         await _db.SaveChangesAsync();
+
         return project;
     }
 
-    public async Task<List<Project>> GetUserProjectsAsync(int userId)
+    public async Task<List<Project>> GetUserProjectsAsync(
+        int userId)
     {
-        var projects = await _db.Projects.Include(p => p.ProjectMembers).
-        Where(p => p.ProjectMembers.Any(pm => pm.UserId == userId))
-        .ToListAsync();
-        return projects;
+        return await _db.Projects
+            .Include(p => p.ProjectMembers)
+            .Where(p => p.ProjectMembers
+                .Any(pm => pm.UserId == userId))
+            .ToListAsync();
     }
 
-    public async Task<Project?> GetProjectByIdAsync(int projectId)
-{
-    return await _db.Projects
-        .Include(p => p.ProjectMembers)
-        .FirstOrDefaultAsync(p => p.Id == projectId);
-}
+    public async Task<Project?> GetProjectByIdAsync(
+        int projectId)
+    {
+        return await _db.Projects
+            .Include(p => p.ProjectMembers)
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+    }
 
     public async Task DeleteProjectAsync(Project project)
     {
         _db.Projects.Remove(project);
+
         await _db.SaveChangesAsync();
     }
 
-public async Task<Project> UpdateProjectAsync(Project project)
-{
-    await _db.SaveChangesAsync();
-    return project;
-}
+    public async Task<Project> UpdateProjectAsync(
+        Project project)
+    {
+        await _db.SaveChangesAsync();
+
+        return project;
+    }
 }

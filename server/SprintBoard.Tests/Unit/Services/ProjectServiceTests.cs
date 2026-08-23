@@ -18,7 +18,9 @@ public class ProjectServiceTests
         _service = new ProjectService(_repositoryMock.Object);
     }
 
+    // ============================================================
     // CreateProjectAsync
+    // ============================================================
 
     [Fact]
     public async Task CreateProjectAsync_WithValidData_CreatesProject()
@@ -47,12 +49,18 @@ public class ProjectServiceTests
             .ReturnsAsync(createdProject);
 
         // Act
-        var result = await _service.CreateProjectAsync(userId, dto);
+        var result = await _service.CreateProjectAsync(
+            userId,
+            dto);
 
         // Assert
         Assert.NotNull(result);
+
+        Assert.Equal(1, result.Id);
         Assert.Equal("SprintBoard", result.Name);
-        Assert.Equal("Project management application", result.Description);
+        Assert.Equal(
+            "Project management application",
+            result.Description);
         Assert.Equal("icon.png", result.Icon);
 
         _repositoryMock.Verify(
@@ -66,7 +74,9 @@ public class ProjectServiceTests
     }
 
 
+    // ============================================================
     // GetUserProjectsAsync
+    // ============================================================
 
     [Fact]
     public async Task GetUserProjectsAsync_WithProjects_ReturnsProjects()
@@ -83,6 +93,7 @@ public class ProjectServiceTests
                 Description = "First project",
                 Icon = "one.png"
             },
+
             new Project
             {
                 Id = 2,
@@ -103,8 +114,15 @@ public class ProjectServiceTests
         Assert.NotNull(result);
         Assert.Equal(2, result.Count);
 
+        Assert.Equal(1, result[0].Id);
         Assert.Equal("Project One", result[0].Name);
+        Assert.Equal("First project", result[0].Description);
+        Assert.Equal("one.png", result[0].Icon);
+
+        Assert.Equal(2, result[1].Id);
         Assert.Equal("Project Two", result[1].Name);
+        Assert.Equal("Second project", result[1].Description);
+        Assert.Equal("two.png", result[1].Icon);
 
         _repositoryMock.Verify(
             r => r.GetUserProjectsAsync(userId),
@@ -113,30 +131,32 @@ public class ProjectServiceTests
 
 
     [Fact]
-public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
-{
-    // Arrange
-    var userId = 1;
+    public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
+    {
+        // Arrange
+        var userId = 1;
 
-    _repositoryMock
-        .Setup(r => r.GetUserProjectsAsync(userId))
-        .ReturnsAsync(new List<Project>());
+        _repositoryMock
+            .Setup(r => r.GetUserProjectsAsync(userId))
+            .ReturnsAsync(new List<Project>());
 
-    // Act
-    var result = await _service.GetUserProjectsAsync(userId);
+        // Act
+        var result = await _service.GetUserProjectsAsync(userId);
 
-    // Assert
-    Assert.NotNull(result);
-    Assert.Empty(result);
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
 
-    _repositoryMock.Verify(
-        r => r.GetUserProjectsAsync(userId),
-        Times.Once);
-}
+        _repositoryMock.Verify(
+            r => r.GetUserProjectsAsync(userId),
+            Times.Once);
+    }
 
 
-    
+    // ============================================================
     // GetProjectByIdAsync
+    // ============================================================
+
     [Fact]
     public async Task GetProjectByIdAsync_WhenProjectExistsAndUserIsMember_ReturnsProject()
     {
@@ -150,11 +170,13 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
             Name = "SprintBoard",
             Description = "Project management application",
             Icon = "icon.png",
+
             ProjectMembers = new List<ProjectMember>
             {
                 new ProjectMember
                 {
-                    UserId = userId
+                    UserId = userId,
+                    ProjectRole = ProjectRole.Member
                 }
             }
         };
@@ -170,9 +192,17 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
 
         // Assert
         Assert.NotNull(result);
+
+        Assert.Equal(projectId, result.Id);
         Assert.Equal("SprintBoard", result.Name);
-        Assert.Equal("Project management application", result.Description);
+        Assert.Equal(
+            "Project management application",
+            result.Description);
         Assert.Equal("icon.png", result.Icon);
+
+        _repositoryMock.Verify(
+            r => r.GetProjectByIdAsync(projectId),
+            Times.Once);
     }
 
 
@@ -192,6 +222,10 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
             () => _service.GetProjectByIdAsync(
                 projectId,
                 userId));
+
+        _repositoryMock.Verify(
+            r => r.GetProjectByIdAsync(projectId),
+            Times.Once);
     }
 
 
@@ -206,11 +240,13 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
         {
             Id = projectId,
             Name = "Private Project",
+
             ProjectMembers = new List<ProjectMember>
             {
                 new ProjectMember
                 {
-                    UserId = 1
+                    UserId = 1,
+                    ProjectRole = ProjectRole.Owner
                 }
             }
         };
@@ -224,10 +260,16 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
             () => _service.GetProjectByIdAsync(
                 projectId,
                 userId));
+
+        _repositoryMock.Verify(
+            r => r.GetProjectByIdAsync(projectId),
+            Times.Once);
     }
 
 
+    // ============================================================
     // DeleteProjectAsync
+    // ============================================================
 
     [Fact]
     public async Task DeleteProjectAsync_WhenUserIsOwner_DeletesProject()
@@ -240,6 +282,7 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
         {
             Id = projectId,
             Name = "SprintBoard",
+
             ProjectMembers = new List<ProjectMember>
             {
                 new ProjectMember
@@ -284,7 +327,8 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
                 projectId));
 
         _repositoryMock.Verify(
-            r => r.DeleteProjectAsync(It.IsAny<Project>()),
+            r => r.DeleteProjectAsync(
+                It.IsAny<Project>()),
             Times.Never);
     }
 
@@ -300,6 +344,7 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
         {
             Id = projectId,
             Name = "SprintBoard",
+
             ProjectMembers = new List<ProjectMember>
             {
                 new ProjectMember
@@ -321,7 +366,8 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
                 projectId));
 
         _repositoryMock.Verify(
-            r => r.DeleteProjectAsync(It.IsAny<Project>()),
+            r => r.DeleteProjectAsync(
+                It.IsAny<Project>()),
             Times.Never);
     }
 
@@ -337,6 +383,7 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
         {
             Id = projectId,
             Name = "SprintBoard",
+
             ProjectMembers = new List<ProjectMember>
             {
                 new ProjectMember
@@ -358,12 +405,15 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
                 projectId));
 
         _repositoryMock.Verify(
-            r => r.DeleteProjectAsync(It.IsAny<Project>()),
+            r => r.DeleteProjectAsync(
+                It.IsAny<Project>()),
             Times.Never);
     }
 
 
+    // ============================================================
     // UpdateProjectAsync
+    // ============================================================
 
     [Fact]
     public async Task UpdateProjectAsync_WhenUserIsMember_UpdatesProject()
@@ -378,6 +428,7 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
             Name = "Old Name",
             Description = "Old description",
             Icon = "old.png",
+
             ProjectMembers = new List<ProjectMember>
             {
                 new ProjectMember
@@ -394,22 +445,13 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
             "new.png"
         );
 
-        var updatedProject = new Project
-        {
-            Id = projectId,
-            Name = "New Name",
-            Description = "New description",
-            Icon = "new.png",
-            ProjectMembers = project.ProjectMembers
-        };
-
         _repositoryMock
             .Setup(r => r.GetProjectByIdAsync(projectId))
             .ReturnsAsync(project);
 
         _repositoryMock
             .Setup(r => r.UpdateProjectAsync(project))
-            .ReturnsAsync(updatedProject);
+            .ReturnsAsync(project);
 
         // Act
         var result = await _service.UpdateProjectAsync(
@@ -418,10 +460,23 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
             dto);
 
         // Assert
+
+        // Response DTO
+        Assert.Equal(projectId, result.Id);
         Assert.Equal("New Name", result.Name);
-        Assert.Equal("New description", result.Description);
+        Assert.Equal(
+            "New description",
+            result.Description);
         Assert.Equal("new.png", result.Icon);
 
+        // Entity was updated
+        Assert.Equal("New Name", project.Name);
+        Assert.Equal(
+            "New description",
+            project.Description);
+        Assert.Equal("new.png", project.Icon);
+
+        // Repository was called
         _repositoryMock.Verify(
             r => r.UpdateProjectAsync(project),
             Times.Once);
@@ -453,7 +508,8 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
                 dto));
 
         _repositoryMock.Verify(
-            r => r.UpdateProjectAsync(It.IsAny<Project>()),
+            r => r.UpdateProjectAsync(
+                It.IsAny<Project>()),
             Times.Never);
     }
 
@@ -469,6 +525,7 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
         {
             Id = projectId,
             Name = "SprintBoard",
+
             ProjectMembers = new List<ProjectMember>
             {
                 new ProjectMember
@@ -497,7 +554,8 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
                 dto));
 
         _repositoryMock.Verify(
-            r => r.UpdateProjectAsync(It.IsAny<Project>()),
+            r => r.UpdateProjectAsync(
+                It.IsAny<Project>()),
             Times.Never);
     }
 }
