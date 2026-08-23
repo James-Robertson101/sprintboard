@@ -30,8 +30,6 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectDto>> GetUserProjectsAsync(int userId)
     {   
         var projects = await _projectRepository.GetUserProjectsAsync(userId);
-        if (projects == null)
-            return new List<ProjectDto>();
         return projects.Select(MapToDto).ToList();
     }
     
