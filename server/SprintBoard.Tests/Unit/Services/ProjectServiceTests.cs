@@ -227,9 +227,7 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
     }
 
 
-    // ---------------------------------------------------------
     // DeleteProjectAsync
-    // ---------------------------------------------------------
 
     [Fact]
     public async Task DeleteProjectAsync_WhenUserIsOwner_DeletesProject()
@@ -365,9 +363,7 @@ public async Task GetUserProjectsAsync_WhenUserHasNoProjects_ReturnsEmptyList()
     }
 
 
-    // ---------------------------------------------------------
     // UpdateProjectAsync
-    // ---------------------------------------------------------
 
     [Fact]
     public async Task UpdateProjectAsync_WhenUserIsMember_UpdatesProject()
