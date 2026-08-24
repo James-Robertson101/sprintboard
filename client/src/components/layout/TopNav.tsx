@@ -7,7 +7,7 @@ function TopNav() {
       <div className="flex h-full items-center justify-between px-6 lg:px-8">
         {/* Logo */}
         <Link
-          to="/"
+          to="/projects"
           className="flex items-center rounded-lg transition-opacity hover:opacity-80"
         >
           <img

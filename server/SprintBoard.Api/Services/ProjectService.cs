@@ -33,10 +33,10 @@ public class ProjectService : IProjectService
     }
 
     public async Task<List<ProjectResponseDto>> GetUserProjectsAsync(
-        int userId)
+        int userId, string? search)
     {
         var projects = await _projectRepository.GetUserProjectsAsync(
-            userId);
+            userId, search);
 
         return projects
             .Select(MapToResponseDto)

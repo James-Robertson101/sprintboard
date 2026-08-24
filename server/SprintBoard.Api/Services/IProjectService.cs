@@ -9,7 +9,7 @@ public interface IProjectService
         ProjectDto dto);
 
     Task<List<ProjectResponseDto>> GetUserProjectsAsync(
-        int userId);
+        int userId, string? search);
 
     Task<ProjectResponseDto> GetProjectByIdAsync(
         int projectId,

@@ -31,15 +31,21 @@ public class ProjectRepository : IProjectRepository
         return project;
     }
 
-    public async Task<List<Project>> GetUserProjectsAsync(
-        int userId)
+   public async Task<List<Project>> GetUserProjectsAsync(
+    int userId,
+    string? search)
+{
+    var query = _db.Projects
+        .Include(p => p.ProjectMembers)
+        .Where(p => p.ProjectMembers.Any(pm => pm.UserId == userId));
+
+    if (!string.IsNullOrWhiteSpace(search))
     {
-        return await _db.Projects
-            .Include(p => p.ProjectMembers)
-            .Where(p => p.ProjectMembers
-                .Any(pm => pm.UserId == userId))
-            .ToListAsync();
+        query = query.Where(p => p.Name.Contains(search));
     }
+
+    return await query.ToListAsync();
+}
 
     public async Task<Project?> GetProjectByIdAsync(
         int projectId)

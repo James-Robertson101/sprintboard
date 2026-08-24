@@ -54,3 +54,16 @@ export function handleGoogleLogin() {
 
   window.location.href = `${apiUrl}/api/auth/google`;
 }
+
+export async function getUser() {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("User UnAuthorized");
+  }
+
+  return response.json();
+}

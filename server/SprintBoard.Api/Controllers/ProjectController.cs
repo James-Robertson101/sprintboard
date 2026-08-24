@@ -48,13 +48,13 @@ public class ProjectController : ControllerBase
 
     [Authorize]
     [HttpGet("MyProjects")]
-    public async Task<ActionResult<List<ProjectResponseDto>>> GetUserProjectsAsync()
+    public async Task<ActionResult<List<ProjectResponseDto>>> GetUserProjectsAsync([FromQuery] string? search)
     {
         try
         {
             var userId = User.GetUserId();
 
-            var response = await _projectService.GetUserProjectsAsync(userId);
+            var response = await _projectService.GetUserProjectsAsync(userId,search);
 
             return Ok(response);
         }

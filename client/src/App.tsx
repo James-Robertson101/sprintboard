@@ -18,7 +18,7 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         {/* Project list */}
-        <Route path="/" element={<Navigate to="/projects" />} />
+        <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/projects" element={<ProjectList />} />
 
         {/* Individual project */}

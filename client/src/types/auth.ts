@@ -3,7 +3,18 @@ export type RegisterData = {
   email: string;
   password: string;
 };
+
 export type LoginData = {
   email: string;
   password: string;
 };
+
+export type User = {
+  id: number;
+  name: string;
+  email: string;
+  avatarUrl: string;
+  role: UserRole;
+};
+
+export type UserRole = "Admin" | "User";

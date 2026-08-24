@@ -28,7 +28,7 @@ function RegisterForm() {
 
     try {
       await registerUser(data);
-      navigate("/projectList");
+      navigate("/projects");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed.");
     }

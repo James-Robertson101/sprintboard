@@ -5,7 +5,7 @@ using SprintBoard.Api.Models;
 public interface IProjectRepository
 {
   Task<Project> CreateProjectAsync(int userId, Project project);
-  Task<List<Project>> GetUserProjectsAsync(int UserId);
+  Task<List<Project>> GetUserProjectsAsync(int UserId, string? search);
   Task<Project?> GetProjectByIdAsync(int projectId);
   Task DeleteProjectAsync(Project project);
   Task<Project> UpdateProjectAsync(Project project);

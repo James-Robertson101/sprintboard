@@ -20,7 +20,7 @@ function LoginForm() {
     };
     try {
       await loginUser(data);
-      navigate("/projectList");
+      navigate("/projects");
     } catch {
       setError("Invalid Email or Password. ");
     }
