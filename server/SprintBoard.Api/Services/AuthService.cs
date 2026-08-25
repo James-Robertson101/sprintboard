@@ -22,29 +22,30 @@ public class AuthService : IAuthService
     }
 
     public async Task<(string Token, UserDto User)> RegisterAsync(
-        RegisterDto dto)
+    RegisterDto dto)
+{
+    // Check email not already taken
+    var existing = await _users.FindByEmailAsync(dto.Email);
+
+    if (existing is not null)
+        throw new InvalidOperationException(
+            "Email already in use.");
+
+    var user = new User
     {
-        // Check email not already taken
-        var existing = await _users.FindByEmailAsync(dto.Email);
+        Email = dto.Email,
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+        Name = dto.Name,
+        AvatarUrl = dto.AvatarUrl,
+        CreatedAt = DateTime.UtcNow
+    };
 
-        if (existing is not null)
-            throw new InvalidOperationException(
-                "Email already in use.");
+    await _users.CreateAsync(user);
 
-        var user = new User
-        {
-            Email = dto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            Name = dto.Name,
-            CreatedAt = DateTime.UtcNow
-        };
+    var token = GenerateJwt(user);
 
-        await _users.CreateAsync(user);
-
-        var token = GenerateJwt(user);
-
-        return (token, MapToDto(user));
-    }
+    return (token, MapToDto(user));
+}
 
     public async Task<(string Token, UserDto User)> LoginAsync(
         LoginDto dto)

@@ -160,7 +160,7 @@ public class AuthController : ControllerBase
             });
             var frontendUrl = _config["FrontendUrl"];
 
-        return Redirect($"{frontendUrl}/projectList");
+        return Redirect($"{frontendUrl}/projects");
     }
 
     [Authorize]

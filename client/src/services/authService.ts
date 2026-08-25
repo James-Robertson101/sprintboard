@@ -60,7 +60,6 @@ export async function getUser(): Promise<User> {
     method: "GET",
     credentials: "include",
   });
-
   if (!response.ok) {
     throw new Error("User UnAuthorized");
   }

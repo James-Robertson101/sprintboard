@@ -1,7 +1,6 @@
 export type AvatarOption = {
   id: string;
-  style: string;
-  seed: string;
+  name: string;
   url: string;
 };
 

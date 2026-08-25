@@ -28,11 +28,24 @@ function TopNav({ name, email, avatarUrl }: TopNavProps) {
         </Link>
 
         {/* Profile */}
-        <button className="flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-slate-100">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-600">
-            {avatarUrl ?? ""}
+        <button
+          type="button"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-slate-100"
+        >
+          {/* Avatar */}
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-sm font-semibold text-indigo-600">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={`${name ?? "User"} avatar`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span>{name?.charAt(0).toUpperCase() ?? "?"}</span>
+            )}
           </div>
 
+          {/* User details */}
           <div className="hidden text-left sm:block">
             <p className="text-sm font-semibold text-slate-900">
               {name ?? "Loading ..."}
@@ -41,6 +54,7 @@ function TopNav({ name, email, avatarUrl }: TopNavProps) {
             <p className="text-xs text-slate-500">{email ?? ""}</p>
           </div>
 
+          {/* Dropdown arrow */}
           <svg
             className="hidden h-4 w-4 text-slate-400 sm:block"
             viewBox="0 0 20 20"
@@ -48,7 +62,7 @@ function TopNav({ name, email, avatarUrl }: TopNavProps) {
           >
             <path
               fillRule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01-1.08 0z"
               clipRule="evenodd"
             />
           </svg>
