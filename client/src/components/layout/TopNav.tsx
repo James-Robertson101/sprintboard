@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
 import sprintBoardIcon from "../../assets/SprintBoard icon.png";
 
-function TopNav() {
+type TopNavProps = {
+  name?: string;
+  email?: string;
+  avatarUrl?: string;
+};
+
+function TopNav({ name, email, avatarUrl }: TopNavProps) {
   return (
     <nav className="h-20 border-b border-slate-200 bg-white">
       <div className="flex h-full items-center justify-between px-6 lg:px-8">
@@ -24,13 +30,15 @@ function TopNav() {
         {/* Profile */}
         <button className="flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-slate-100">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-600">
-            JD
+            {avatarUrl ?? ""}
           </div>
 
           <div className="hidden text-left sm:block">
-            <p className="text-sm font-semibold text-slate-900">John Doe</p>
+            <p className="text-sm font-semibold text-slate-900">
+              {name ?? "Loading ..."}
+            </p>
 
-            <p className="text-xs text-slate-500">Developer</p>
+            <p className="text-xs text-slate-500">{email ?? ""}</p>
           </div>
 
           <svg

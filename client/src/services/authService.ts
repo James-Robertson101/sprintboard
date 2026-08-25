@@ -1,4 +1,4 @@
-import type { RegisterData, LoginData } from "../types/auth";
+import type { RegisterData, LoginData, User } from "../types/auth";
 
 export async function registerUser(data: RegisterData) {
   const response = await fetch(
@@ -55,8 +55,8 @@ export function handleGoogleLogin() {
   window.location.href = `${apiUrl}/api/auth/google`;
 }
 
-export async function getUser() {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me}`, {
+export async function getUser(): Promise<User> {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
     method: "GET",
     credentials: "include",
   });

@@ -3,11 +3,14 @@ import TopNav from "../components/layout/TopNav";
 import ProjectSearch from "../components/projects/ProjectSearch";
 import type { Project } from "../types/project";
 import { getProjects } from "../services/projectService";
+import { getUser } from "../services/authService";
+import type { User } from "../types/auth";
 
 function ProjectList() {
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [projectList, setProjectList] = useState<Project[]>([]);
+  const [userData, setUserData] = useState<User>();
 
   function handleSubmit() {
     setSubmittedSearch(search);
@@ -26,12 +29,28 @@ function ProjectList() {
     loadProjects();
   }, [submittedSearch]);
 
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        const userData = await getUser();
+        setUserData(userData);
+      } catch (error) {
+        console.error("Failed to load user: ", error);
+      }
+    }
+    loadUserData();
+  }, []);
+
   const buttonStyles =
     "inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TopNav />
+      <TopNav
+        name={userData?.name}
+        email={userData?.email}
+        avatarUrl={userData?.avatarUrl}
+      />
 
       <div className="flex">
         {/* Sidebar */}
