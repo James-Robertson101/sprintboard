@@ -5,6 +5,7 @@ import type { Project } from "../types/project";
 import { getProjects } from "../services/projectService";
 import { getUser } from "../services/authService";
 import type { User } from "../types/auth";
+import { Link } from "react-router-dom";
 
 function ProjectList() {
   const [search, setSearch] = useState("");
@@ -201,9 +202,10 @@ function ProjectList() {
                 /* Project list */
                 <div className="divide-y divide-slate-200">
                   {projectList.map((project) => (
-                    <div
+                    <Link
                       key={project.id}
-                      className="px-6 py-4 transition hover:bg-slate-50"
+                      to={`/projects/${project.id}`}
+                      className="block px-6 py-4 transition hover:bg-slate-50"
                     >
                       <h3 className="font-medium text-slate-900">
                         {project.name}
@@ -214,7 +216,7 @@ function ProjectList() {
                           {project.description}
                         </p>
                       )}
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}

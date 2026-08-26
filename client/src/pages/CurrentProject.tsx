@@ -1,13 +1,9 @@
-import ProjectNavigation from "../components/ProjectNavigation";
-import TopNav from "../components/layout/TopNav";
-
+import { useParams } from "react-router-dom";
 function CurrentProject() {
-  return (
-    <>
-      <TopNav />
-      <ProjectNavigation />
-    </>
-  );
+  const { projectId } = useParams();
+  console.log(projectId);
+
+  return <></>;
 }
 
 export default CurrentProject;

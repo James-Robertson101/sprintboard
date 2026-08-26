@@ -12,10 +12,6 @@ function ProjectNavigation() {
         <Link to={`/projects/${projectId}/discrepancy`}>Discrepancy</Link>
         <Link to={`/projects/${projectId}/completed`}>Completed</Link>
       </div>
-
-      <div>
-        <Link to={`/projects/${projectId}/create`}>Create</Link>
-      </div>
     </div>
   );
 }
