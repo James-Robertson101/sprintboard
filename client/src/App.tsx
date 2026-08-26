@@ -8,6 +8,7 @@ import ProjectList from "./pages/ProjectList.tsx";
 import ProjectLayout from "./components/layout/ProjectLayout.tsx";
 import ProjectBoard from "./pages/CurrentProject.tsx";
 import ProjectSettings from "./pages/ProjectSettings.tsx";
+import CreateProject from "./pages/CreateProject.tsx";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/projects" element={<ProjectList />} />
 
         {/* Individual project */}
+        <Route path="/projects/create" element={<CreateProject />} />
         <Route path="/projects/:projectId" element={<ProjectLayout />}>
           {/* Default project route */}
           <Route index element={<Navigate to="all" replace />} />

@@ -1,4 +1,4 @@
-import type { Project } from "../types/project";
+import type { Project, ProjectData } from "../types/project";
 
 export async function getProjects(search?: string): Promise<Project[]> {
   const params = new URLSearchParams();
@@ -36,4 +36,22 @@ export async function getProjectById(id: number): Promise<Project> {
   }
 
   return response.json();
+}
+
+export async function createProject(projectData: ProjectData) {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/project/createProject`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(projectData),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Create Project Failed");
+  }
 }

@@ -4,3 +4,9 @@ export interface Project {
   description: string | null;
   icon: string | null;
 }
+
+export type ProjectData = {
+  name: string;
+  description?: string;
+  avatarUrl?: string;
+};
