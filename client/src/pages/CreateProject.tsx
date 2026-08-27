@@ -46,15 +46,17 @@ function CreateProject() {
         email={userData?.email}
         avatarUrl={avatarUrl}
       />
-      <div className="flex w-screen h-screen justify-center items-center">
+      <div className="flex w-screen justify-center mt-15">
         <form onSubmit={handleSubmit} className="flex flex-col">
-          <h1 className="text-4xl">Create Project</h1>
+          <h1 className="text-4xl text-primary">Create Project</h1>
+          <p className="mt-5">Name</p>
           <input
             type="text"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             placeholder="Enter your Project Name"
           />
+          <p className="mt-5">Description</p>
           <input
             type="text"
             value={description}
@@ -79,10 +81,11 @@ function CreateProject() {
             onClick={() => {
               setAvatarModalOpen(true);
             }}
-            className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:bg-slate-50"
+            className="my-5 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:bg-slate-50"
           >
             {avatarUrl ? "Change avatar" : "Choose avatar"}
           </button>
+
           <Button type="submit">Create</Button>
         </form>
       </div>

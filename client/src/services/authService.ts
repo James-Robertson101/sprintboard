@@ -66,3 +66,16 @@ export async function getUser(): Promise<User> {
 
   return response.json();
 }
+
+export async function logout() {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/auth/Logout`,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
+  if (!response.ok) {
+    throw new Error("Logout Failed");
+  }
+}

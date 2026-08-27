@@ -4,6 +4,7 @@ import AvatarModal from "./AvatarModal";
 import { useState } from "react";
 import { registerUser, handleGoogleLogin } from "../../services/authService";
 import type { RegisterData } from "../../types/auth";
+import { useAuth } from "../../context/useAuth";
 
 function RegisterForm() {
   const navigate = useNavigate();
@@ -15,14 +16,15 @@ function RegisterForm() {
 
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
-
   const [error, setError] = useState("");
+  const { refetchUser } = useAuth();
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     if (password.length < 8) {
       setError("Password must be 8 characters long");
+      return;
     }
 
     if (password !== confirmPassword) {
@@ -44,6 +46,7 @@ function RegisterForm() {
 
     try {
       await registerUser(data);
+      refetchUser();
       navigate("/projects");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed.");
@@ -169,6 +172,7 @@ function RegisterForm() {
             autoComplete="new-password"
             required
             className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            minLength={8}
           />
         </div>
 
@@ -190,6 +194,7 @@ function RegisterForm() {
             autoComplete="new-password"
             required
             className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            minLength={8}
           />
         </div>
 
