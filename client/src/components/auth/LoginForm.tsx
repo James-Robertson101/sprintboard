@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import Button from "../Button";
+import Button from "../ui/Button";
 import { useState } from "react";
 import React from "react";
 import { loginUser, handleGoogleLogin } from "../../services/authService";

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import Button from "../Button";
+import Button from "../ui/Button";
 import AvatarModal from "./AvatarModal";
 import { useState } from "react";
 import { registerUser, handleGoogleLogin } from "../../services/authService";

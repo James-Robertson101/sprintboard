@@ -1,5 +1,5 @@
 function ProjectSettings() {
-  return <div>Settings</div>;
+  return <div></div>;
 }
 
 export default ProjectSettings;

@@ -1,4 +1,4 @@
-import ProjectNavigation from "../ProjectNavigation";
+import ProjectNavigation from "../navigation/ProjectNavigation";
 import { Outlet } from "react-router-dom";
 import TopNav from "./TopNav";
 import { useAuth } from "../../context/useAuth";

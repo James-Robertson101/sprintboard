@@ -1,11 +1,11 @@
 import { useState } from "react";
-import AvatarModal from "../components/auth/AvatarModal";
-import Button from "../components/Button";
-import TopNav from "../components/layout/TopNav";
-import { createProject } from "../services/projectService";
-import type { ProjectData } from "../types/project";
+import AvatarModal from "../../components/auth/AvatarModal";
+import Button from "../../components/ui/Button";
+import TopNav from "../../components/layout/TopNav";
+import { createProject } from "../../services/projectService";
+import type { ProjectData } from "../../types/project";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/useAuth";
+import { useAuth } from "../../context/useAuth";
 
 function CreateProject() {
   const [projectName, setProjectName] = useState("");

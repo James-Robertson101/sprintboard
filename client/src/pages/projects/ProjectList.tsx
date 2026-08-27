@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import TopNav from "../components/layout/TopNav";
-import ProjectSearch from "../components/projects/ProjectSearch";
-import type { Project } from "../types/project";
-import { getProjects } from "../services/projectService";
+import TopNav from "../../components/layout/TopNav";
+import ProjectSearch from "../../components/projects/ProjectSearch";
+import type { Project } from "../../types/project";
+import { getProjects } from "../../services/projectService";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/useAuth";
-import Sidebar from "../components/layout/Sidebar";
+import { useAuth } from "../../context/useAuth";
+import Sidebar from "../../components/layout/Sidebar";
 
 function ProjectList() {
   const [search, setSearch] = useState("");
