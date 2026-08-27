@@ -5,6 +5,7 @@ import type { Project } from "../types/project";
 import { getProjects } from "../services/projectService";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import Sidebar from "../components/layout/Sidebar";
 
 function ProjectList() {
   const [search, setSearch] = useState("");
@@ -43,30 +44,7 @@ function ProjectList() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="hidden min-h-[calc(100vh-5rem)] w-64 shrink-0 border-r border-slate-200 bg-white md:block">
-          <nav className="space-y-1 p-4">
-            <a
-              href="#"
-              className="flex items-center rounded-lg bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700"
-            >
-              Projects
-            </a>
-
-            <a
-              href="#"
-              className="flex items-center rounded-lg px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-            >
-              Dashboard
-            </a>
-
-            <a
-              href="#"
-              className="flex items-center rounded-lg px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-            >
-              Settings
-            </a>
-          </nav>
-        </aside>
+        <Sidebar />
 
         {/* Main content */}
         <main className="min-w-0 flex-1">
