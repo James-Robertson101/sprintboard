@@ -302,21 +302,21 @@ The frontend is being developed using:
 - [x] Create project
 - [x] Get user's projects
 - [x] Get project by ID
-- [ ] Update project
-- [ ] Delete project
-- [ ] Add project members
-- [ ] Remove project members
-- [ ] Project permissions
-- [ ] Project roles
+- [x] Update project
+- [x] Delete project
+- [x] Add project members
+- [x] Remove project members
+- [x] Project permissions
+- [x] Project roles
 
-## Tasks & Sprints
+## Issue & Sprints
 
-- [ ] Task model
-- [ ] Create tasks
-- [ ] Update tasks
-- [ ] Delete tasks
-- [ ] Assign tasks to users
-- [ ] Task status
+- [x] Issue model
+- [] Create issues
+- [] Update issues
+- [ ] Delete issues
+- [ ] Assign issues to users
+- [ ] issue status
 - [ ] Sprint model
 - [ ] Create sprints
 - [ ] Assign tasks to sprints
@@ -329,8 +329,8 @@ The frontend is being developed using:
 - [x] Login page connected to authentication API
 - [x] Authentication using standard `async/await`
 - [x] Registration page
-- [ ] Authentication state handling
-- [ ] Project list
+- [x] Authentication state handling
+- [x] Project list
 - [ ] Project dashboard
 - [ ] Project member management
 - [ ] Task management UI

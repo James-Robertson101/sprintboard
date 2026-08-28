@@ -10,7 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
-
+    public DbSet<Issue> Issues { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -22,5 +22,17 @@ public class AppDbContext : DbContext
             .HasColumnType("xid")
             .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();
+
+        modelBuilder.Entity<Issue>()
+            .HasOne(i => i.CreatedBy)
+            .WithMany()
+            .HasForeignKey(i => i.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Issue>()
+            .HasOne(i => i.Assignee)
+            .WithMany()
+            .HasForeignKey(i => i.AssigneeId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
