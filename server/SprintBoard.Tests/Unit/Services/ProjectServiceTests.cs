@@ -18,9 +18,7 @@ public class ProjectServiceTests
         _service = new ProjectService(_repositoryMock.Object);
     }
 
-    // ============================================================
     // CreateProjectAsync
-    // ============================================================
 
     [Fact]
     public async Task CreateProjectAsync_WithValidData_CreatesProject()
@@ -73,16 +71,14 @@ public class ProjectServiceTests
             Times.Once);
     }
 
-
-    // ============================================================
     // GetUserProjectsAsync
-    // ============================================================
 
     [Fact]
     public async Task GetUserProjectsAsync_WithProjects_ReturnsProjects()
     {
         // Arrange
         var userId = 1;
+        string? search = null;
 
         var projects = new List<Project>
         {
@@ -104,11 +100,11 @@ public class ProjectServiceTests
         };
 
         _repositoryMock
-            .Setup(r => r.GetUserProjectsAsync(userId))
+            .Setup(r => r.GetUserProjectsAsync(userId, search))
             .ReturnsAsync(projects);
 
         // Act
-        var result = await _service.GetUserProjectsAsync(userId);
+        var result = await _service.GetUserProjectsAsync(userId, search);
 
         // Assert
         Assert.NotNull(result);
@@ -125,7 +121,7 @@ public class ProjectServiceTests
         Assert.Equal("two.png", result[1].Icon);
 
         _repositoryMock.Verify(
-            r => r.GetUserProjectsAsync(userId),
+            r => r.GetUserProjectsAsync(userId, search),
             Times.Once);
     }
 
@@ -135,27 +131,61 @@ public class ProjectServiceTests
     {
         // Arrange
         var userId = 1;
+        string? search = null;
 
         _repositoryMock
-            .Setup(r => r.GetUserProjectsAsync(userId))
+            .Setup(r => r.GetUserProjectsAsync(userId, search))
             .ReturnsAsync(new List<Project>());
 
         // Act
-        var result = await _service.GetUserProjectsAsync(userId);
+        var result = await _service.GetUserProjectsAsync(userId, search);
 
         // Assert
         Assert.NotNull(result);
         Assert.Empty(result);
 
         _repositoryMock.Verify(
-            r => r.GetUserProjectsAsync(userId),
+            r => r.GetUserProjectsAsync(userId, search),
             Times.Once);
     }
 
 
-    // ============================================================
+    [Fact]
+    public async Task GetUserProjectsAsync_WithSearchTerm_PassesSearchToRepository()
+    {
+        // Arrange
+        var userId = 1;
+        var search = "Sprint";
+
+        var projects = new List<Project>
+        {
+            new Project
+            {
+                Id = 1,
+                Name = "SprintBoard",
+                Description = "Project management application",
+                Icon = "icon.png"
+            }
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetUserProjectsAsync(userId, search))
+            .ReturnsAsync(projects);
+
+        // Act
+        var result = await _service.GetUserProjectsAsync(userId, search);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("SprintBoard", result[0].Name);
+
+        _repositoryMock.Verify(
+            r => r.GetUserProjectsAsync(userId, search),
+            Times.Once);
+    }
+
+
     // GetProjectByIdAsync
-    // ============================================================
 
     [Fact]
     public async Task GetProjectByIdAsync_WhenProjectExistsAndUserIsMember_ReturnsProject()
@@ -267,10 +297,7 @@ public class ProjectServiceTests
     }
 
 
-    // ============================================================
     // DeleteProjectAsync
-    // ============================================================
-
     [Fact]
     public async Task DeleteProjectAsync_WhenUserIsOwner_DeletesProject()
     {
@@ -411,9 +438,7 @@ public class ProjectServiceTests
     }
 
 
-    // ============================================================
     // UpdateProjectAsync
-    // ============================================================
 
     [Fact]
     public async Task UpdateProjectAsync_WhenUserIsMember_UpdatesProject()
