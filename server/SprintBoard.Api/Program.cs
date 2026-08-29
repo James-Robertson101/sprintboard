@@ -6,6 +6,7 @@ using SprintBoard.Api.Data;
 using SprintBoard.Api.Repositories;
 using SprintBoard.Api.Services;
 using SprintBoard.Api.Data.Interceptors;
+using SprintBoard.Api.Middleware;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -92,6 +93,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseGlobalExceptionMiddleware();
 
 if (app.Environment.IsDevelopment())
 {

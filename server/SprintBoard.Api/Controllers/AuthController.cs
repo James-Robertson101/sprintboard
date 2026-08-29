@@ -30,64 +30,50 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> Register(RegisterDto dto)
     {
-        try
-        {
-            var (token, user) = await _auth.RegisterAsync(dto);
+        var (token, user) = await _auth.RegisterAsync(dto);
 
-            var expiry = DateTimeOffset.UtcNow.AddHours(
-                double.Parse(_config["Jwt:ExpiryHours"]!)
-            );
+        var expiry = DateTimeOffset.UtcNow.AddHours(
+            double.Parse(_config["Jwt:ExpiryHours"]!)
+        );
 
-            Response.Cookies.Append(
-                "access_token",
-                token,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Lax,
-                    Expires = expiry,
-                    Path = "/"
-                });
+        Response.Cookies.Append(
+            "access_token",
+            token,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = expiry,
+                Path = "/"
+            });
 
-            return Ok(user);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
+        return Ok(user);
     }
 
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<ActionResult<UserDto>> Login(LoginDto dto)
     {
-        try
-        {
-            var (token, user) = await _auth.LoginAsync(dto);
+        var (token, user) = await _auth.LoginAsync(dto);
 
-            var expiry = DateTimeOffset.UtcNow.AddHours(
-                double.Parse(_config["Jwt:ExpiryHours"]!)
-            );
+        var expiry = DateTimeOffset.UtcNow.AddHours(
+            double.Parse(_config["Jwt:ExpiryHours"]!)
+        );
 
-            Response.Cookies.Append(
-                "access_token",
-                token,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Lax,
-                    Expires = expiry,
-                    Path = "/"
-                });
+        Response.Cookies.Append(
+            "access_token",
+            token,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = expiry,
+                Path = "/"
+            });
 
-            return Ok(user);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { error = ex.Message });
-        }
+        return Ok(user);
     }
 
     [AllowAnonymous]
@@ -158,7 +144,7 @@ public class AuthController : ControllerBase
                 Expires = expiry,
                 Path = "/"
             });
-            var frontendUrl = _config["FrontendUrl"];
+        var frontendUrl = _config["FrontendUrl"];
 
         return Redirect($"{frontendUrl}/projects");
     }
@@ -185,7 +171,7 @@ public class AuthController : ControllerBase
 
         return Ok(user);
     }
-    
+
     [Authorize]
     [HttpPost("Logout")]
     public IActionResult Logout()
@@ -199,5 +185,5 @@ public class AuthController : ControllerBase
         });
 
         return NoContent();
-}
+    }
 }

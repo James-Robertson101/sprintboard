@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Models;
 using SprintBoard.Api.Repositories;
+using SprintBoard.Api.Exceptions;
 
 namespace SprintBoard.Api.Services;
 
@@ -28,9 +29,7 @@ public class AuthService : IAuthService
     var existing = await _users.FindByEmailAsync(dto.Email);
 
     if (existing is not null)
-        throw new InvalidOperationException(
-            "Email already in use.");
-
+        throw new ConflictException("A user with this email already exists.");
     var user = new User
     {
         Email = dto.Email,
