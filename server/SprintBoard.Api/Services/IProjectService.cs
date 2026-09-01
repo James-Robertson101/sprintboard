@@ -23,4 +23,20 @@ public interface IProjectService
         int userId,
         int projectId,
         ProjectDto dto);
+
+    // --- Members ---
+
+    Task<List<ProjectMemberDto>> GetMembersAsync(
+        int projectId,
+        int userId);
+
+    Task<ProjectMemberDto> AddMemberAsync(
+        int projectId,
+        int ownerId,
+        AddMemberDto dto);
+
+    Task RemoveMemberAsync(
+        int projectId,
+        int ownerId,
+        int targetUserId);
 }

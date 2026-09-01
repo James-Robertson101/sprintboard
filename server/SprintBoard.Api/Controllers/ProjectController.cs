@@ -60,4 +60,33 @@ public class ProjectController : ControllerBase
         var response = await _projectService.UpdateProjectAsync(userId, projectId, projectDto);
         return Ok(response);
     }
+
+    // --- Members ---
+
+    [Authorize]
+    [HttpGet("{projectId:int}/members")]
+    public async Task<ActionResult<List<ProjectMemberDto>>> GetMembers(int projectId)
+    {
+        var userId = User.GetUserId();
+        var response = await _projectService.GetMembersAsync(projectId, userId);
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpPost("{projectId:int}/members")]
+    public async Task<ActionResult<ProjectMemberDto>> AddMember(int projectId, AddMemberDto dto)
+    {
+        var ownerId = User.GetUserId();
+        var response = await _projectService.AddMemberAsync(projectId, ownerId, dto);
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpDelete("{projectId:int}/members/{targetUserId:int}")]
+    public async Task<ActionResult> RemoveMember(int projectId, int targetUserId)
+    {
+        var ownerId = User.GetUserId();
+        await _projectService.RemoveMemberAsync(projectId, ownerId, targetUserId);
+        return NoContent();
+    }
 }

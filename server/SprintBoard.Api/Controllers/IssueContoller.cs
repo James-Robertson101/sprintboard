@@ -1,31 +1,58 @@
-using Microsoft.AspNetCore.Mvc;
-using SprintBoard.Api.Services;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SprintBoard.Api.DTOs;
+using SprintBoard.Api.Services;
+
 namespace SprintBoard.Api.Controllers;
 
-
-
 [ApiController]
-[Route("api/[controller]")]
-public class IssueController:ControllerBase
+[Authorize]
+[Route("api/projects/{projectId:int}/issues")]
+public class IssuesController : ControllerBase
 {
-  private readonly IIssueService _service;
-  public IssueController(IIssueService service)
-  {
-    _service = service;
-  }
+    private readonly IIssueService _issueService;
 
-  // [Authorize]
-  // [HttpPost("CreateIssue")]
-  // public async  Task<ActionResult<IssueResponseDto>> CreateIssue(IssueDto issue)
-  // {
-  //           var userId = User.GetUserId();
+    public IssuesController(IIssueService issueService)
+    {
+        _issueService = issueService;
+    }
 
-  //           var response = await _service.CreateIssue(
-  //               issue);
+    private int CurrentUserId =>
+        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-  //           return Ok(response);
-  // }
-} 
-  
+    [HttpGet]
+    public async Task<ActionResult<List<IssueResponseDto>>> GetIssues(int projectId)
+    {
+        var issues = await _issueService.GetIssuesForProjectAsync(projectId, CurrentUserId);
+        return Ok(issues);
+    }
+
+    [HttpGet("{issueId:int}")]
+    public async Task<ActionResult<IssueResponseDto>> GetIssueById(int projectId, int issueId)
+    {
+        var issue = await _issueService.GetIssueByIdAsync(projectId, issueId, CurrentUserId);
+        return Ok(issue);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<IssueResponseDto>> CreateIssue(int projectId, [FromBody] CreateIssueDto dto)
+    {
+        var created = await _issueService.CreateIssueAsync(projectId, CurrentUserId, dto);
+        return CreatedAtAction(nameof(GetIssueById), new { projectId, issueId = created.Id }, created);
+    }
+
+    [HttpPut("{issueId:int}")]
+    public async Task<ActionResult<IssueResponseDto>> UpdateIssue(int projectId, int issueId, [FromBody] UpdateIssueDto dto)
+    {
+        var updated = await _issueService.UpdateIssueAsync(projectId, issueId, CurrentUserId, dto);
+        return Ok(updated);
+    }
+
+    [HttpDelete("{issueId:int}")]
+    public async Task<IActionResult> DeleteIssue(int projectId, int issueId)
+    {
+        await _issueService.DeleteIssueAsync(projectId, issueId, CurrentUserId);
+        return NoContent();
+    }
+}

@@ -1,10 +1,12 @@
-namespace SprintBoard.Api.Repositories;
-
-using SprintBoard.Api.Data;
-using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Models;
 
-public interface IIssueRepository
-{ 
+namespace SprintBoard.Api.Repositories;
 
+public interface IIssueRepository
+{
+    Task<Issue?> GetByIdAsync(int id);
+    Task<List<Issue>> GetByProjectIdAsync(int projectId);
+    Task<Issue> CreateAsync(Issue issue);
+    Task<Issue> UpdateAsync(Issue issue);
+    Task DeleteAsync(Issue issue);
 }
