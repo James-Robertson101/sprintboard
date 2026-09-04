@@ -2,7 +2,7 @@ namespace SprintBoard.Api.Models;
 
 public enum Priority
 {
-  Urgent,
+  High,
   Medium,
   Low 
 }

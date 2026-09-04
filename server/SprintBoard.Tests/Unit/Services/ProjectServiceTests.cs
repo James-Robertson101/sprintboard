@@ -10,12 +10,16 @@ namespace SprintBoard.Tests.Unit.Services;
 public class ProjectServiceTests
 {
     private readonly Mock<IProjectRepository> _repositoryMock;
+    private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly ProjectService _service;
+
 
     public ProjectServiceTests()
     {
         _repositoryMock = new Mock<IProjectRepository>();
-        _service = new ProjectService(_repositoryMock.Object);
+        _userRepositoryMock = new Mock<IUserRepository>();
+        
+        _service = new ProjectService(_repositoryMock.Object, _userRepositoryMock.Object);
     }
 
     // CreateProjectAsync
