@@ -10,3 +10,12 @@ export type ProjectData = {
   description?: string;
   avatarUrl?: string;
 };
+
+export type ProjectMemberRole = "Owner" | "Member";
+export interface ProjectMember {
+  id: number;
+  name: string;
+  email: string;
+  avatarUrl?: string | null;
+  role: ProjectMemberRole;
+}

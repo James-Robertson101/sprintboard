@@ -1,5 +1,9 @@
-import type { Project, ProjectData } from "../types/project";
-import type { Assignee } from "../types/Issue";
+import type {
+  Project,
+  ProjectData,
+  ProjectMember,
+  ProjectMemberRole,
+} from "../types/project";
 
 export async function getProjects(search?: string): Promise<Project[]> {
   const params = new URLSearchParams();
@@ -63,6 +67,7 @@ export async function createProject(projectData: ProjectData) {
 interface ProjectMemberDto {
   userId: number;
   name: string;
+  email: string;
   avatarUrl?: string | null;
   projectRole: string;
   joinTime: string;
@@ -70,7 +75,7 @@ interface ProjectMemberDto {
 
 export async function getProjectMembers(
   projectId: number | string,
-): Promise<Assignee[]> {
+): Promise<ProjectMember[]> {
   const response = await fetch(
     `${import.meta.env.VITE_API_URL}/api/project/${projectId}/members`,
     {
@@ -88,6 +93,8 @@ export async function getProjectMembers(
   return members.map((member) => ({
     id: member.userId,
     name: member.name,
+    email: member.email,
     avatarUrl: member.avatarUrl,
+    role: member.projectRole as ProjectMemberRole,
   }));
 }
