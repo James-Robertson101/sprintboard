@@ -8,7 +8,7 @@ function ProjectLayout() {
   const { user } = useAuth();
 
   return (
-    <div>
+    <div className="min-h-screen bg-slate-50">
       <TopNav
         name={user?.name}
         email={user?.email}
@@ -16,11 +16,11 @@ function ProjectLayout() {
       />
       <div className="flex">
         <Sidebar />
-        <div className="flex-1 min-w-0">
-          <ProjectNavigation />
-        </div>
 
-        <Outlet />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <ProjectNavigation />
+          <Outlet />
+        </div>
       </div>
     </div>
   );

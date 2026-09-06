@@ -19,7 +19,7 @@ public class IssuesController : ControllerBase
     }
 
     private int CurrentUserId =>
-        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        User.GetUserId();
 
     [HttpGet]
     public async Task<ActionResult<List<IssueResponseDto>>> GetIssues(int projectId)
