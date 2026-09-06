@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import type { Issue, IssueStatus } from "../../../types/Issue";
 import {
   createIssue,
+  deleteIssue,
   getIssues,
   updateIssue,
 } from "../../../services/issueService";
@@ -99,6 +100,13 @@ function ProjectBoard() {
     );
   }
 
+  async function handleDeleteIssue() {
+    if (!projectId || modalState?.mode !== "edit") return;
+    const issueId = modalState.issue.id;
+    await deleteIssue(projectId, issueId);
+    setIssues((current) => current.filter((i) => i.id !== issueId));
+  }
+
   return (
     <main className="min-w-0 flex-1">
       <div className="px-6 py-8 lg:px-10">
@@ -156,6 +164,7 @@ function ProjectBoard() {
           onClose={() => setModalState(null)}
           onCreate={handleCreateIssue}
           onUpdate={handleUpdateIssue}
+          onDelete={handleDeleteIssue}
         />
       )}
     </main>

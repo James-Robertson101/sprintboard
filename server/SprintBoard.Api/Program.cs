@@ -7,7 +7,7 @@ using SprintBoard.Api.Repositories;
 using SprintBoard.Api.Services;
 using SprintBoard.Api.Data.Interceptors;
 using SprintBoard.Api.Middleware;
-
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,7 +88,9 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IIssueService,IssueService>();
 builder.Services.AddScoped<IIssueRepository,IssueRepository>();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+.AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

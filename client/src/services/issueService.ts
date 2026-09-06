@@ -66,3 +66,17 @@ export async function updateIssue(
   );
   return handleResponse<Issue>(res);
 }
+
+export async function deleteIssue(
+  projectId: string | number,
+  issueId: number,
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/api/projects/${projectId}/issues/${issueId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    },
+  );
+  return handleResponse<void>(res);
+}
