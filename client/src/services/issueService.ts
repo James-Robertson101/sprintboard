@@ -4,8 +4,6 @@ import type {
   UpdateIssuePayload,
 } from "../types/Issue";
 
-// Swap this for however your other services resolve the API base
-// (e.g. an axios instance) if that differs from a bare env var.
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 async function handleResponse<T>(res: Response): Promise<T> {

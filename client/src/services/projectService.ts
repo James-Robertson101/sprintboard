@@ -1,4 +1,5 @@
 import type { Project, ProjectData } from "../types/project";
+import type { Assignee } from "../types/Issue";
 
 export async function getProjects(search?: string): Promise<Project[]> {
   const params = new URLSearchParams();
@@ -54,4 +55,39 @@ export async function createProject(projectData: ProjectData) {
   if (!response.ok) {
     throw new Error("Create Project Failed");
   }
+}
+
+// Mirrors ProjectMemberDto (UserId, Name, AvatarUrl, ProjectRole, JoinTime).
+// Only the fields the assignee picker needs are pulled out below; add
+// projectRole/joinTime here too if you need them elsewhere later.
+interface ProjectMemberDto {
+  userId: number;
+  name: string;
+  avatarUrl?: string | null;
+  projectRole: string;
+  joinTime: string;
+}
+
+export async function getProjectMembers(
+  projectId: number | string,
+): Promise<Assignee[]> {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/project/${projectId}/members`,
+    {
+      method: "GET",
+      credentials: "include",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch project members");
+  }
+
+  const members: ProjectMemberDto[] = await response.json();
+
+  return members.map((member) => ({
+    id: member.userId,
+    name: member.name,
+    avatarUrl: member.avatarUrl,
+  }));
 }

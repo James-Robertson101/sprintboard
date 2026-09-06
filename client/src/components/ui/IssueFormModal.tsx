@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type {
+  Assignee,
   CreateIssuePayload,
   Issue,
   IssueStatus,
@@ -11,6 +12,7 @@ interface IssueFormModalProps {
   mode: "create" | "edit";
   initialStatus: IssueStatus;
   issue?: Issue;
+  members: Assignee[];
   onClose: () => void;
   onCreate: (payload: CreateIssuePayload) => Promise<void>;
   onUpdate: (payload: UpdateIssuePayload) => Promise<void>;
@@ -33,6 +35,7 @@ function IssueFormModal({
   mode,
   initialStatus,
   issue,
+  members,
   onClose,
   onCreate,
   onUpdate,
@@ -73,7 +76,7 @@ function IssueFormModal({
     setError(null);
 
     try {
-      const parsedAssigneeId = assigneeId.trim() ? Number(assigneeId) : null;
+      const parsedAssigneeId = assigneeId ? Number(assigneeId) : null;
 
       if (mode === "create") {
         await onCreate({
@@ -242,20 +245,21 @@ function IssueFormModal({
 
             <div>
               <label className={labelStyles} htmlFor="issue-assignee">
-                Assignee ID
+                Assignee
               </label>
-              <input
+              <select
                 id="issue-assignee"
-                type="number"
                 value={assigneeId}
                 onChange={(e) => setAssigneeId(e.target.value)}
                 className={inputStyles}
-                placeholder="Leave blank if unassigned"
-              />
-              <p className="mt-1 text-xs text-slate-400">
-                Swap this for a proper picker once you have an endpoint to list
-                team members.
-              </p>
+              >
+                <option value="">Unassigned</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {error && <p className="text-sm text-rose-600">{error}</p>}

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import type { Issue, IssueStatus } from "../../../types/Issue";
+import type { Assignee, Issue, IssueStatus } from "../../../types/Issue";
 import {
   createIssue,
   deleteIssue,
   getIssues,
   updateIssue,
 } from "../../../services/issueService";
+import { getProjectMembers } from "../../../services/projectService";
 import BoardColumn from "../../../components/ui/BoardColumn";
 import IssueFormModal from "../../../components/ui/IssueFormModal";
 
@@ -21,6 +22,7 @@ function ProjectBoard() {
   const { projectId } = useParams();
 
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [members, setMembers] = useState<Assignee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -35,16 +37,22 @@ function ProjectBoard() {
 
     let isCancelled = false;
 
-    async function loadIssues() {
+    async function loadBoard() {
       setIsLoading(true);
       setLoadError(null);
       try {
-        const data = await getIssues(projectId!);
-        if (!isCancelled) setIssues(data);
+        const [issuesData, membersData] = await Promise.all([
+          getIssues(projectId!),
+          getProjectMembers(projectId!),
+        ]);
+        if (!isCancelled) {
+          setIssues(issuesData);
+          setMembers(membersData);
+        }
       } catch (err) {
         if (!isCancelled) {
           setLoadError(
-            err instanceof Error ? err.message : "Failed to load issues.",
+            err instanceof Error ? err.message : "Failed to load board.",
           );
         }
       } finally {
@@ -52,7 +60,7 @@ function ProjectBoard() {
       }
     }
 
-    loadIssues();
+    loadBoard();
     return () => {
       isCancelled = true;
     };
@@ -150,6 +158,7 @@ function ProjectBoard() {
         <IssueFormModal
           mode="create"
           initialStatus={modalState.status}
+          members={members}
           onClose={() => setModalState(null)}
           onCreate={handleCreateIssue}
           onUpdate={handleUpdateIssue}
@@ -161,6 +170,7 @@ function ProjectBoard() {
           mode="edit"
           initialStatus={modalState.issue.status}
           issue={modalState.issue}
+          members={members}
           onClose={() => setModalState(null)}
           onCreate={handleCreateIssue}
           onUpdate={handleUpdateIssue}
