@@ -10,6 +10,7 @@ namespace SprintBoard.Api.Controllers;
 public class ProjectController : ControllerBase
 {
     private readonly IProjectService _projectService;
+    
 
     public ProjectController(IProjectService projectService)
     {
@@ -49,7 +50,7 @@ public class ProjectController : ControllerBase
     {
         var userId = User.GetUserId();
         await _projectService.DeleteProjectAsync(userId, projectId);
-        return NoContent();
+        return NoContent(); 
     }
 
     [Authorize]

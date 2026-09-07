@@ -4,7 +4,6 @@ import type {
   ProjectMember,
   ProjectMemberRole,
 } from "../types/project";
-
 export async function getProjects(search?: string): Promise<Project[]> {
   const params = new URLSearchParams();
 
@@ -85,29 +84,26 @@ export async function createProject(projectData: ProjectData) {
   }
 }
 
-// export async function deleteProject(
-//   projectId: number,
-//   userId: number,
-// ): Promise<void> {
-//   const response = await fetch(
-//     `${import.meta.env.VITE_API_URL}/api/project/${projectId}/members/${userId}`,
-//     {
-//       method: "DELETE",
-//       credentials: "include",
-//     },
-//   );
+export async function deleteProject(projectId: number): Promise<void> {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/project/${projectId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    },
+  );
 
-//   if (!response.ok) {
-//     let message = "Failed to delete member";
-//     try {
-//       const result = await response.json();
-//       message = result.error || message;
-//     } catch {
-//       // body might be empty (e.g. plain 403/404 with no JSON) — ignore
-//     }
-//     throw new Error(message);
-//   }
-// }
+  if (!response.ok) {
+    let message = "Failed to delete project";
+    try {
+      const result = await response.json();
+      message = result.error || message;
+    } catch {
+      // body might be empty (e.g. plain 403/404 with no JSON) — ignore
+    }
+    throw new Error(message);
+  }
+}
 
 interface ProjectMemberDto {
   userId: number;

@@ -8,12 +8,15 @@ public static class DataSeeder
 
     public static async Task SeedAsync(AppDbContext context)
     {
-        if (context.Users.Any())
-            {
-            Console.WriteLine("[Seeder] Users table already has data — skipping seed.");
-            return;
-            }
-        Console.WriteLine("[Seeder] No users found — seeding demo data...");
+        Console.WriteLine("[Seeder] Clearing existing data...");
+        // Delete in dependency order (children first)
+        context.Issues.RemoveRange(context.Issues);
+        context.ProjectMembers.RemoveRange(context.ProjectMembers);
+        context.Projects.RemoveRange(context.Projects);
+        context.Users.RemoveRange(context.Users);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine("[Seeder] seeding data...");
         var users = new List<User>
         {
             new() { Name = "Alice Admin",  Email = "alice@sprintboard.dev", Role = UserRole.Admin, PasswordHash = Hash(DemoPassword) },

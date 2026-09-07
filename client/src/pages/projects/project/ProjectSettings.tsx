@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  deleteProject,
   getProjectMembers,
   removeProjectMember,
 } from "../../../services/projectService";
 import type { ProjectMember } from "../../../types/project";
-
 type SettingsSection = "general" | "members" | "danger";
 
 function ProjectSettings() {
   const { projectId } = useParams();
-  const navigate = useNavigate();
 
   const [activeSection, setActiveSection] =
     useState<SettingsSection>("general");
@@ -24,6 +23,7 @@ function ProjectSettings() {
 
   const [username, setUsername] = useState("");
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!projectId) return;
@@ -99,6 +99,26 @@ function ProjectSettings() {
           : "Failed to remove project member.",
       );
     }
+  }
+
+  async function handleDeleteProject() {
+    if (!projectId) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this project",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // TODO:
+      await deleteProject(Number(projectId));
+    } catch (error) {
+      setMembersError(
+        error instanceof Error ? error.message : "Failed to delete project.",
+      );
+    }
+    navigate("/projects");
   }
 
   function renderIcon(section: SettingsSection) {
@@ -504,6 +524,7 @@ function ProjectSettings() {
                   </div>
 
                   <button
+                    onClick={handleDeleteProject}
                     type="button"
                     className="shrink-0 rounded-lg border border-rose-300 px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
                   >
