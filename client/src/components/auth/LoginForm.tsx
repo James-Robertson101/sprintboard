@@ -5,12 +5,15 @@ import React from "react";
 import { loginUser, handleGoogleLogin } from "../../services/authService";
 import type { LoginData } from "../../types/auth";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/useAuth";
 
 function LoginForm() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { refetchUser } = useAuth();
+
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
@@ -20,6 +23,7 @@ function LoginForm() {
     };
     try {
       await loginUser(data);
+      await refetchUser();
       navigate("/projects");
     } catch {
       setError("Invalid Email or Password. ");

@@ -27,10 +27,10 @@ export async function loginUser(data: LoginData) {
     `${import.meta.env.VITE_API_URL}/api/auth/login`,
     {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(data),
     },
   );
