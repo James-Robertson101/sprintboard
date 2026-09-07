@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getProjectMembers } from "../../../services/projectService";
+import {
+  getProjectMembers,
+  removeProjectMember,
+} from "../../../services/projectService";
 import type { ProjectMember } from "../../../types/project";
 
 type SettingsSection = "general" | "members" | "danger";
@@ -84,7 +87,7 @@ function ProjectSettings() {
 
     try {
       // TODO:
-      // await removeProjectMember(projectId, memberId);
+      await removeProjectMember(Number(projectId), memberId);
 
       setMembers((current) =>
         current.filter((member) => member.id !== memberId),

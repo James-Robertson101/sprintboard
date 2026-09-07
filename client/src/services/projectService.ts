@@ -27,6 +27,30 @@ export async function getProjects(search?: string): Promise<Project[]> {
   return response.json();
 }
 
+export async function removeProjectMember(
+  projectId: number,
+  userId: number,
+): Promise<void> {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/project/${projectId}/members/${userId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    },
+  );
+
+  if (!response.ok) {
+    let message = "Failed to delete member";
+    try {
+      const result = await response.json();
+      message = result.error || message;
+    } catch {
+      // body might be empty (e.g. plain 403/404 with no JSON) — ignore
+    }
+    throw new Error(message);
+  }
+}
+
 export async function getProjectById(id: number): Promise<Project> {
   const response = await fetch(
     `${import.meta.env.VITE_API_URL}/api/project/${id}`,
@@ -61,9 +85,30 @@ export async function createProject(projectData: ProjectData) {
   }
 }
 
-// Mirrors ProjectMemberDto (UserId, Name, AvatarUrl, ProjectRole, JoinTime).
-// Only the fields the assignee picker needs are pulled out below; add
-// projectRole/joinTime here too if you need them elsewhere later.
+// export async function deleteProject(
+//   projectId: number,
+//   userId: number,
+// ): Promise<void> {
+//   const response = await fetch(
+//     `${import.meta.env.VITE_API_URL}/api/project/${projectId}/members/${userId}`,
+//     {
+//       method: "DELETE",
+//       credentials: "include",
+//     },
+//   );
+
+//   if (!response.ok) {
+//     let message = "Failed to delete member";
+//     try {
+//       const result = await response.json();
+//       message = result.error || message;
+//     } catch {
+//       // body might be empty (e.g. plain 403/404 with no JSON) — ignore
+//     }
+//     throw new Error(message);
+//   }
+// }
+
 interface ProjectMemberDto {
   userId: number;
   name: string;
