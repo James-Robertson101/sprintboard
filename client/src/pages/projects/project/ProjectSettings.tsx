@@ -4,8 +4,10 @@ import {
   deleteProject,
   getProjectMembers,
   removeProjectMember,
+  getAvailableUsers,
+  addProjectMember,
 } from "../../../services/projectService";
-import type { ProjectMember } from "../../../types/project";
+import type { ProjectMember, UserSummary } from "../../../types/project";
 type SettingsSection = "general" | "members" | "danger";
 
 function ProjectSettings() {
@@ -20,9 +22,10 @@ function ProjectSettings() {
 
   const [projectName, setProjectName] = useState("Project");
   const [description, setDescription] = useState("");
-
-  const [username, setUsername] = useState("");
-  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserSummary[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [addingUserId, setAddingUserId] = useState<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,20 +54,35 @@ function ProjectSettings() {
     loadMembers();
   }, [projectId]);
 
-  async function handleAddMember(e: React.SubmitEvent) {
+  async function handleSearch(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!projectId || !searchQuery.trim()) return;
 
-    if (!projectId || !username.trim()) return;
-
-    setIsAddingMember(true);
+    setIsSearching(true);
     setMembersError(null);
 
     try {
-      // TODO:
-      // const member = await addProjectMember(projectId, username.trim());
-      // setMembers((current) => [...current, member]);
+      const results = await getAvailableUsers(projectId, searchQuery.trim());
+      setSearchResults(results);
+    } catch (error) {
+      setMembersError(
+        error instanceof Error ? error.message : "Failed to search users.",
+      );
+    } finally {
+      setIsSearching(false);
+    }
+  }
 
-      setUsername("");
+  async function handleAddMember(user: UserSummary) {
+    if (!projectId) return;
+
+    setAddingUserId(user.id);
+    setMembersError(null);
+
+    try {
+      const member = await addProjectMember(projectId, user.id);
+      setMembers((current) => [...current, member]);
+      setSearchResults((current) => current.filter((u) => u.id !== user.id));
     } catch (error) {
       setMembersError(
         error instanceof Error
@@ -72,7 +90,7 @@ function ProjectSettings() {
           : "Failed to add project member.",
       );
     } finally {
-      setIsAddingMember(false);
+      setAddingUserId(null);
     }
   }
 
@@ -341,7 +359,7 @@ function ProjectSettings() {
                     </p>
                   </div>
 
-                  <form onSubmit={handleAddMember} className="px-6 py-6">
+                  <form onSubmit={handleSearch} className="px-6 py-6">
                     <div className="flex flex-col gap-3 sm:flex-row">
                       <div className="min-w-0 flex-1">
                         <label htmlFor="member-username" className="sr-only">
@@ -351,8 +369,8 @@ function ProjectSettings() {
                         <input
                           id="member-username"
                           type="text"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder="Enter username"
                           className="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                         />
@@ -360,13 +378,55 @@ function ProjectSettings() {
 
                       <button
                         type="submit"
-                        disabled={isAddingMember || !username.trim()}
+                        disabled={isSearching || !searchQuery.trim()}
                         className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {isAddingMember ? "Adding..." : "Add member"}
+                        {isSearching ? "Searching..." : "Search"}
                       </button>
                     </div>
                   </form>
+                  {searchResults.length > 0 && (
+                    <div className="border-t border-slate-200 px-6 py-4">
+                      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Search results
+                      </p>
+
+                      <div className="divide-y divide-slate-200 rounded-lg border border-slate-200">
+                        {searchResults.map((user) => (
+                          <div
+                            key={user.id}
+                            className="flex items-center justify-between gap-4 px-4 py-3"
+                          >
+                            <div className="flex min-w-0 items-center gap-3">
+                              {user.avatarUrl ? (
+                                <img
+                                  src={user.avatarUrl}
+                                  alt={user.name}
+                                  className="h-8 w-8 shrink-0 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+                                  {user.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <p className="truncate text-sm font-medium text-slate-900">
+                                {user.name}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleAddMember(user)}
+                              disabled={addingUserId === user.id}
+                              className="shrink-0 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {addingUserId === user.id ? "Adding..." : "Add"}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Member list */}

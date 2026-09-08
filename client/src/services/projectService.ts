@@ -3,6 +3,7 @@ import type {
   ProjectData,
   ProjectMember,
   ProjectMemberRole,
+  UserSummary,
 } from "../types/project";
 export async function getProjects(search?: string): Promise<Project[]> {
   const params = new URLSearchParams();
@@ -128,7 +129,6 @@ export async function getProjectMembers(
   if (!response.ok) {
     throw new Error("Failed to fetch project members");
   }
-
   const members: ProjectMemberDto[] = await response.json();
 
   return members.map((member) => ({
@@ -138,4 +138,27 @@ export async function getProjectMembers(
     avatarUrl: member.avatarUrl,
     role: member.projectRole as ProjectMemberRole,
   }));
+}
+
+export async function getAvailableUsers(projectId: string, search: string) {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/project/${projectId}/available-users?search=${encodeURIComponent(search)}`,
+    { credentials: "include" },
+  );
+  if (!res.ok) throw new Error("Failed to search users.");
+  return res.json() as Promise<UserSummary[]>;
+}
+
+export async function addProjectMember(projectId: string, userId: number) {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/project/${projectId}/members`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ userId }),
+    },
+  );
+  if (!res.ok) throw new Error("Failed to add member.");
+  return res.json() as Promise<ProjectMember>;
 }

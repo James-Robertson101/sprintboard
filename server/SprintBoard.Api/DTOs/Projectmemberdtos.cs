@@ -2,7 +2,7 @@ using SprintBoard.Api.Models;
 
 namespace SprintBoard.Api.DTOs;
 
-public record AddMemberDto(string Email);
+public record AddMemberDto(int UserId);
 
 public record ProjectMemberDto(
     int UserId,

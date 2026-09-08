@@ -19,3 +19,9 @@ export interface ProjectMember {
   avatarUrl?: string | null;
   role: ProjectMemberRole;
 }
+
+export interface UserSummary {
+  id: number;
+  name: string;
+  avatarUrl?: string;
+}

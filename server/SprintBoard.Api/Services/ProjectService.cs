@@ -122,34 +122,34 @@ public class ProjectService : IProjectService
             .ToList();
     }
 
-    public async Task<ProjectMemberDto> AddMemberAsync(int projectId, int ownerId, AddMemberDto dto)
+public async Task<ProjectMemberDto> AddMemberAsync(int projectId, int ownerId, AddMemberDto dto)
+{
+    var project = await GetProjectAndVerifyOwnerAsync(projectId, ownerId);
+
+    var userToAdd = await _userRepository.GetByIdAsync(dto.UserId)
+        ?? throw new NotFoundException("User not found.");
+
+    var alreadyMember = project.ProjectMembers.Any(m => m.UserId == userToAdd.Id);
+    if (alreadyMember)
     {
-        var project = await GetProjectAndVerifyOwnerAsync(projectId, ownerId);
-
-        var userToAdd = await _userRepository.FindByEmailAsync(dto.Email)
-            ?? throw new NotFoundException("No user found with that email.");
-
-        var alreadyMember = project.ProjectMembers.Any(m => m.UserId == userToAdd.Id);
-        if (alreadyMember)
-        {
-            throw new ConflictException("This user is already a member of the project.");
-        }
-
-        var member = new ProjectMember
-        {
-            ProjectId = projectId,
-            UserId = userToAdd.Id,
-            User = userToAdd,
-            ProjectRole = ProjectRole.Member,
-            JoinTime = DateTime.UtcNow,
-            InvitedByUserId = ownerId
-        };
-
-        project.ProjectMembers.Add(member);
-        await _projectRepository.UpdateProjectAsync(project);
-
-        return MapToMemberDto(member);
+        throw new ConflictException("This user is already a member of the project.");
     }
+
+    var member = new ProjectMember
+    {
+        ProjectId = projectId,
+        UserId = userToAdd.Id,
+        User = userToAdd,
+        ProjectRole = ProjectRole.Member,
+        JoinTime = DateTime.UtcNow,
+        InvitedByUserId = ownerId
+    };
+
+    project.ProjectMembers.Add(member);
+    await _projectRepository.UpdateProjectAsync(project);
+
+    return MapToMemberDto(member);
+}
 
     public async Task RemoveMemberAsync(int projectId, int ownerId, int targetUserId)
     {
