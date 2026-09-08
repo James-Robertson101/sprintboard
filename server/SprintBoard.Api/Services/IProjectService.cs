@@ -39,4 +39,6 @@ public interface IProjectService
         int projectId,
         int ownerId,
         int targetUserId);
+    
+    Task<List<UserSummaryDto>> GetAvailableUsersAsync(int projectId, int userId, string? search);
 }

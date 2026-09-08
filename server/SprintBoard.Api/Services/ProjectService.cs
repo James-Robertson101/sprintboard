@@ -168,6 +168,21 @@ public class ProjectService : IProjectService
         await _projectRepository.UpdateProjectAsync(project);
     }
 
+    public async Task<List<UserSummaryDto>> GetAvailableUsersAsync(int projectId, int userId, string? search)
+{
+    var project = await GetProjectAndVerifyMembershipAsync(projectId, userId);
+
+    var existingMemberIds = project.ProjectMembers
+        .Select(m => m.UserId)
+        .ToHashSet();
+
+    var candidates = await _userRepository.SearchUsersAsync(search);
+
+    return candidates
+        .Where(u => !existingMemberIds.Contains(u.Id))
+        .Select(u => new UserSummaryDto(u.Id, u.Name, u.AvatarUrl))
+        .ToList();
+}
     // --- Helpers ---
 
     private async Task<Project> GetProjectAndVerifyMembershipAsync(int projectId, int userId)
@@ -201,6 +216,7 @@ public class ProjectService : IProjectService
 
         return project;
     }
+
 
     private static ProjectMemberDto MapToMemberDto(ProjectMember member)
     {

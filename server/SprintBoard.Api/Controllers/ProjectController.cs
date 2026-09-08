@@ -90,4 +90,13 @@ public class ProjectController : ControllerBase
         await _projectService.RemoveMemberAsync(projectId, ownerId, targetUserId);
         return NoContent();
     }
+
+[Authorize]
+[HttpGet("{projectId:int}/available-users")]
+public async Task<ActionResult<List<UserSummaryDto>>> GetAvailableUsers(int projectId, [FromQuery] string? search)
+{
+    var ownerId = User.GetUserId();
+    var response = await _projectService.GetAvailableUsersAsync(projectId, ownerId, search);
+    return Ok(response);
+}
 }

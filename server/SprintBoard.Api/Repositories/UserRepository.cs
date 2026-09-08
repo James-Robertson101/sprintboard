@@ -40,4 +40,17 @@ public async Task UpdateAsync(User user)
     _db.Users.Update(user);
     await _db.SaveChangesAsync();
 }
+
+public async Task<List<User>> SearchUsersAsync(string? search)
+{
+    var query = _db.Users.AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(search))
+    {
+        query = query.Where(u =>
+            u.Name.Contains(search) || u.Email.Contains(search));
+    }
+
+    return await query.ToListAsync();
+}
 }

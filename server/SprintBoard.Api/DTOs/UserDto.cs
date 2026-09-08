@@ -10,3 +10,5 @@ public record UserDto(
     UserRole Role
 );
 // No GoogleId, no PasswordHash — never exposed
+
+public record UserSummaryDto(int Id, string Name, string? AvatarUrl);

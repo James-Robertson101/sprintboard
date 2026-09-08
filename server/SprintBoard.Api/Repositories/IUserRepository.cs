@@ -7,4 +7,5 @@ public interface IUserRepository
     Task<User?> FindByEmailAsync(string email);
     Task<User?> FindByGoogleIdAsync(string googleId);
     Task UpdateAsync(User user);
+    Task<List<User>> SearchUsersAsync(string? search);
     }
