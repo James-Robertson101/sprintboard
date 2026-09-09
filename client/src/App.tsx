@@ -9,7 +9,7 @@ import ProjectList from "./pages/projects/ProjectList.tsx";
 
 import ProjectLayout from "./components/layout/ProjectLayout.tsx";
 import ProjectBoard from "./pages/projects/project/ProjectBoard.tsx";
-import ProjectSettings from "./pages/projects/project/ProjectSettings.tsx";
+import ProjectSettings from "./pages/projects/project/ProjectSettings/ProjectSettings.tsx";
 import CreateProject from "./pages/projects/CreateProject.tsx";
 
 function App() {
