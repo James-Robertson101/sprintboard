@@ -428,8 +428,13 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
-client/node_modules
-client/.env
-client/.env.local
-server/appsettings.Development.json
-server/.env
+# Client
+client/node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# ASP.NET Core local development settings
+**/appsettings.Development.json
