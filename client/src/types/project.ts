@@ -8,7 +8,7 @@ export interface Project {
 export type ProjectData = {
   name: string;
   description?: string;
-  avatarUrl?: string;
+  icon?: string;
 };
 
 export type ProjectMemberRole = "Owner" | "Member";

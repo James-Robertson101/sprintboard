@@ -22,10 +22,11 @@ function CreateProject() {
     const projectData: ProjectData = {
       name: projectName,
       description: description,
-      avatarUrl: avatarUrl,
+      icon: avatarUrl,
     };
 
     try {
+      console.log("PROJECT DATA:", projectData);
       await createProject(projectData);
       navigate("/projects");
     } catch (error) {

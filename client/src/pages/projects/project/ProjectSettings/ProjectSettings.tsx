@@ -45,7 +45,9 @@ function ProjectSettings() {
           </aside>
 
           <section className="min-w-0">
-            {activeSection === "general" && <GeneralSettingsPanel />}
+            {activeSection === "general" && (
+              <GeneralSettingsPanel projectId={projectId} />
+            )}
             {activeSection === "members" && (
               <MembersSettingsPanel projectId={projectId} />
             )}
