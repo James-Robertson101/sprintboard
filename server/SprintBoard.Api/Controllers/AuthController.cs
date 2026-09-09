@@ -32,21 +32,7 @@ public class AuthController : ControllerBase
     {
         var (token, user) = await _auth.RegisterAsync(dto);
 
-        var expiry = DateTimeOffset.UtcNow.AddHours(
-            double.Parse(_config["Jwt:ExpiryHours"]!)
-        );
-
-        Response.Cookies.Append(
-            "access_token",
-            token,
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Expires = expiry,
-                Path = "/"
-            });
+        SetAccessTokenCookie(token);
 
         return Ok(user);
     }
@@ -57,21 +43,7 @@ public class AuthController : ControllerBase
     {
         var (token, user) = await _auth.LoginAsync(dto);
 
-        var expiry = DateTimeOffset.UtcNow.AddHours(
-            double.Parse(_config["Jwt:ExpiryHours"]!)
-        );
-
-        Response.Cookies.Append(
-            "access_token",
-            token,
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Expires = expiry,
-                Path = "/"
-            });
+        SetAccessTokenCookie(token);
 
         return Ok(user);
     }
@@ -128,22 +100,11 @@ public class AuthController : ControllerBase
             googleId,
             email,
             name);
-        await HttpContext.SignOutAsync("GoogleTemporary");
-        var expiry = DateTimeOffset.UtcNow.AddHours(
-            double.Parse(_config["Jwt:ExpiryHours"]!)
-        );
 
-        Response.Cookies.Append(
-            "access_token",
-            token,
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Expires = expiry,
-                Path = "/"
-            });
+        await HttpContext.SignOutAsync("GoogleTemporary");
+
+        SetAccessTokenCookie(token);
+
         var frontendUrl = _config["FrontendUrl"];
 
         return Redirect($"{frontendUrl}/projects");
@@ -176,14 +137,36 @@ public class AuthController : ControllerBase
     [HttpPost("Logout")]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete("access_token", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-            Path = "/"
-        });
+        Response.Cookies.Delete(
+            "access_token",
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/"
+            });
 
         return NoContent();
     }
+
+    private void SetAccessTokenCookie(string token)
+    {
+        var expiry = DateTimeOffset.UtcNow.AddHours(
+            double.Parse(_config["Jwt:ExpiryHours"]!)
+        );
+
+        Response.Cookies.Append(
+            "access_token",
+            token,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = expiry,
+                Path = "/"
+            });
+    }
 }
+

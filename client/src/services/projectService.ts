@@ -106,26 +106,6 @@ export async function deleteProject(projectId: number): Promise<void> {
   }
 }
 
-export async function UpdateProject(projectId: number): Promise<void> {
-  const response = await fetch(
-    `${import.meta.env.VITE_API_URL}/api/project/${projectId}`,
-    {
-      method: "DELETE",
-      credentials: "include",
-    },
-  );
-
-  if (!response.ok) {
-    let message = "Failed to delete project";
-    try {
-      const result = await response.json();
-      message = result.error || message;
-    } catch {
-      // body might be empty (e.g. plain 403/404 with no JSON) — ignore
-    }
-    throw new Error(message);
-  }
-}
 interface ProjectMemberDto {
   userId: number;
   name: string;
