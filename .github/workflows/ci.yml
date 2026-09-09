@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.x"
+
+      - name: Restore API
+        working-directory: server/SprintBoard.Api
+        run: dotnet restore
+
+      - name: Build API
+        working-directory: server/SprintBoard.Api
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Restore tests
+        working-directory: server/SprintBoard.Tests
+        run: dotnet restore
+
+      - name: Build tests
+        working-directory: server/SprintBoard.Tests
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests
+        working-directory: server/SprintBoard.Tests
+        run: dotnet test --configuration Release --no-build
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Lint
+        working-directory: client
+        run: npm run lint
+
+      - name: Build
+        working-directory: client
+        run: npm run build
