@@ -24,9 +24,11 @@ jobs:
           dotnet-version: '10.x'
 
       - name: Build with dotnet
+        working-directory: server/SprintBoard.Api
         run: dotnet build --configuration Release
 
       - name: dotnet publish
+        working-directory: server/SprintBoard.Api
         run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
       - name: Upload artifact for deployment job
@@ -62,4 +64,3 @@ jobs:
           app-name: 'sprintboard-api-jr'
           slot-name: 'Production'
           package: .
-          
