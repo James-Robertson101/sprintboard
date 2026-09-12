@@ -403,6 +403,8 @@ The frontend is being developed using:
 # Project Status
 
 **SprintBoard is currently in the backend/API and frontend development stage.**
+The backend has been successfully deployed using Microsoft Azure.
+The frontend will be deployed soon using Azure Static Web Apps.
 
 Authentication, Project management, and Issue management are in place, including a working Kanban board on the frontend with drag-and-drop status updates, issue CRUD, and an assignee picker backed by project membership.
 
