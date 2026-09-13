@@ -1,413 +1,249 @@
 # SprintBoard
 
-SprintBoard is a project and task management application currently under development.
+SprintBoard is a full-stack project and task management application, inspired by Jira. It allows users to create and manage projects, collaborate with other project members, and track tasks through a Kanban-style workflow.
 
-The goal of SprintBoard is to allow users to create and manage projects, work with other project members, and manage tasks and sprints within those projects.
+**Live Demo:** [calm-tree-0f811550f.6.azurestaticapps.net](https://calm-tree-0f811550f.6.azurestaticapps.net/)
 
-## 🚧 Development Status
+---
 
-SprintBoard is currently in active development.
+## Demo Accounts
 
-### Completed so far
+The live demo is seeded with the following test accounts (all use the same password):
 
-- JWT authentication
-- JWT stored using **HttpOnly cookies**
-- User registration
-- User login
-- Google authentication
-- Current-user endpoint
-- User and Project models
-- Project Members relationship
-- Project creation, retrieval, update, and deletion
-- Adding and removing project members
-- Project roles and project-level permissions
-- Issue model
-- Creating, updating, and deleting issues
-- Assigning issues to project members
-- Issue status tracking
-- Global exception handling middleware
-- Enum values serialized as strings across the API (via `JsonStringEnumConverter`)
-- DTO-based API structure
-- User roles
-- React frontend login and registration pages
-- Frontend authentication connected to the API
-- Project list page
-- Project Kanban board with drag-and-drop status updates
-- Issue create/edit modal with priority, status, and assignee fields
-- Issue delete with confirmation
-- Assignee picker backed by the project members endpoint
-- Authentication requests currently handled using standard `async/await`
+| Email                 | Role  | Password       |
+| --------------------- | ----- | -------------- |
+| alice@sprintboard.dev | Admin | `Password123!` |
+| bob@sprintboard.dev   | User  | `Password123!` |
+| carol@sprintboard.dev | User  | `Password123!` |
+| dave@sprintboard.dev  | User  | `Password123!` |
+| erin@sprintboard.dev  | User  | `Password123!` |
+| frank@sprintboard.dev | User  | `Password123!` |
 
-### Currently working on
+Alice is the owner of the seeded "SprintBoard MVP" project; the rest are project members with sample issues assigned across them.
 
-- Project member management UI (invite/remove members from the frontend)
+> Demo accounts only — not representative of production password policy.
+
+### ⚠️ Known Limitation: Login on Brave (and other strict browsers)
+
+The frontend and API are hosted on separate Azure domains (Static Web Apps and App Service). Because the authentication cookie is set by the API domain but read by the frontend domain, browsers with strict third-party cookie blocking — most notably **Brave with Shields enabled**, and Safari's ITP — will block it, even though it's correctly configured with `SameSite=None; Secure`.
+
+- **Workaround:** disable Brave Shields for this site, or use Chrome/Firefox, when testing the live demo.
+- **Root cause:** Brave enforces its own third-party cookie blocking layer independently of the `SameSite` cookie spec. Since the frontend and API sit on different origins, the cookie set during login/OAuth is treated as third-party and dropped.
+- **Proper fix:** serve the frontend and API from the same domain — Azure Static Web Apps supports this via its "linked backends" feature, which proxies `/api/*` requests through the frontend's origin so the cookie becomes first-party. This requires the **Standard tier** of Azure Static Web Apps; upgrading from the Free tier wasn't worth it for the scope of this project, so the limitation is documented here instead.
+
+---
+
+## Project Status
+
+The core application is functionally complete: authentication, project management, and issue tracking work end-to-end across both the API and the React frontend, including a Kanban board with drag-and-drop status updates, issue CRUD, and an assignee picker backed by project membership.
+
+**Remaining before the project is considered finished:**
+
+- Admin-only routes
+- Inline code documentation/comments
 - Sprint functionality
-- Further project authorization/permissions refinement
+- Real-time updates via SignalR
 
-### Planned frontend improvements
+---
 
-- Introduce **TanStack Query** for server-state management
-- Replace/rework manual API request handling where appropriate
-- Add query caching, mutations, loading states, and error handling with TanStack Query
+## Tech Stack
+
+**Backend**
+
+- C# / ASP.NET Core Web API
+- Entity Framework Core
+- JWT authentication, stored in HttpOnly cookies
+- Google OAuth
+- Global exception handling via custom try/catch middleware
+- DTO-based API structure
+- REST API
+
+**Frontend**
+
+- React + TypeScript
+- Tailwind CSS
+- DiceBear for generated user avatars (no image upload/storage needed)
+- Standard `async/await` for API requests (see [Planned Improvements](#planned-improvements))
+- SignalR planned for real-time behaviour
 
 ---
 
 ## Authentication
 
-SprintBoard uses **JWT authentication with HttpOnly cookies**.
+SprintBoard uses JWT authentication with the token stored in an HttpOnly `access_token` cookie, issued on login or registration. Because the cookie is HttpOnly, the JWT cannot be accessed via JavaScript, reducing the risk of token theft through client-side scripts (e.g. XSS).
 
-The JWT is issued when a user logs in or registers and is stored in an HttpOnly `access_token` cookie.
-
-Using HttpOnly cookies means the JWT cannot be accessed directly through JavaScript, helping reduce the risk of token theft through client-side scripts.
-
-### Authentication Routes
+### Routes
 
 | Method | Route                       | Description                                  |
 | ------ | --------------------------- | -------------------------------------------- |
-| `POST` | `/api/Auth/register`        | Register a new user                          |
-| `POST` | `/api/Auth/login`           | Log in with credentials                      |
-| `GET`  | `/api/Auth/google`          | Start Google OAuth login                     |
-| `GET`  | `/api/Auth/google/complete` | Complete Google OAuth login                  |
-| `GET`  | `/api/Auth/me`              | Get the currently authenticated user         |
-| `POST` | `/api/Auth/Logout`          | Log out and remove the authentication cookie |
+| POST   | `/api/Auth/register`        | Register a new user                          |
+| POST   | `/api/Auth/login`           | Log in with credentials                      |
+| GET    | `/api/Auth/google`          | Start Google OAuth login                     |
+| GET    | `/api/Auth/google/complete` | Complete Google OAuth login                  |
+| GET    | `/api/Auth/me`              | Get the currently authenticated user         |
+| POST   | `/api/Auth/Logout`          | Log out and remove the authentication cookie |
 
-### Authentication Flow
+### Flow
 
 ```text
 Register/Login
-      ↓
+      │
+      ▼
 Frontend sends authentication request
-      ↓
-API validates credentials
-      ↓
-JWT generated
-      ↓
+      │
+      ▼
+API validates credentials → JWT generated
+      │
+      ▼
 JWT stored in HttpOnly cookie
-      ↓
-Authenticated requests
-      ↓
-JWT read from cookie
-      ↓
-User identity established
+      │
+      ▼
+Authenticated requests → JWT read from cookie → user identity established
 ```
 
-For Google authentication:
-
-```text
-Frontend
-   ↓
-/api/Auth/google
-   ↓
-Google OAuth
-   ↓
-/api/Auth/google/complete
-   ↓
-User created/found
-   ↓
-JWT generated
-   ↓
-JWT stored in HttpOnly cookie
-   ↓
-Frontend redirected to application
-```
+Google OAuth follows the same pattern via `/api/Auth/google` → Google → `/api/Auth/google/complete`, after which the user is created/found, a JWT is issued, and the frontend is redirected into the app.
 
 ---
 
-# Frontend
+## Projects
 
-The frontend is being developed using React.
+Users are linked to projects through **Project Members**, so a project can have multiple users, each with a project-level role (e.g. Owner, Member) used for permissions.
 
-Authentication, the project list, and the project Kanban board are functional. At the moment, all API requests are handled using standard JavaScript/TypeScript `async/await`.
+| Method | Route                                             | Description                                |
+| ------ | ------------------------------------------------- | ------------------------------------------ |
+| POST   | `/api/Project/CreateProject`                      | Create a new project                       |
+| GET    | `/api/Project/MyProjects`                         | Get projects belonging to the current user |
+| GET    | `/api/Project/{id}`                               | Get a project by ID                        |
+| PUT    | `/api/Project/{projectId}`                        | Update a project                           |
+| DELETE | `/api/Project/{projectId}`                        | Delete a project                           |
+| GET    | `/api/Project/{projectId}/members`                | Get a project's members                    |
+| POST   | `/api/Project/{projectId}/members`                | Add a member to a project by email         |
+| DELETE | `/api/Project/{projectId}/members/{targetUserId}` | Remove a member from a project             |
 
-For example, the current approach for a request is conceptually:
+---
 
-```text
-React component
-      ↓
-async/await API request
-      ↓
-ASP.NET Core API
-      ↓
-Global exception middleware (on failure)
-      ↓
-Response returned to frontend
-```
+## Issues
 
-### Kanban Board
+Issues belong to a project and move through a status pipeline: `Todo → InProgress → InReview → Done`. New issues always start as `Todo`; status changes afterward via update.
 
-The project board fetches a project's issues and members on load, then renders one column per issue status. Dragging a card to a different column updates the UI immediately and sends a `PUT` request to persist the new status, rolling back the local change if the request fails.
+| Method | Route                                        | Description                  |
+| ------ | -------------------------------------------- | ---------------------------- |
+| GET    | `/api/projects/{projectId}/issues`           | Get all issues for a project |
+| GET    | `/api/projects/{projectId}/issues/{issueId}` | Get a single issue by ID     |
+| POST   | `/api/projects/{projectId}/issues`           | Create a new issue           |
+| PUT    | `/api/projects/{projectId}/issues/{issueId}` | Update an issue              |
+| DELETE | `/api/projects/{projectId}/issues/{issueId}` | Delete an issue              |
+
+Only project members can view or modify a project's issues. Assigning an issue to a user requires that user to be a member of the same project.
+
+> **Note:** the `/api/Project/...` and `/api/projects/{projectId}/issues` routes use inconsistent casing/conventions (PascalCase-verb-style vs. lowercase-RESTful). This is a known inconsistency to be cleaned up rather than an intentional design choice.
+
+---
+
+## Users
+
+| Method | Route            | Description           |
+| ------ | ---------------- | --------------------- |
+| GET    | `/api/User/{id}` | Retrieve a user by ID |
+
+---
+
+## Kanban Board (Frontend)
+
+The board fetches a project's issues and members on load and renders one column per issue status. Dragging a card to a different column updates the UI optimistically and sends a `PUT` request to persist the change, rolling back locally if the request fails.
 
 Issues can be created, edited, and deleted from a modal reachable from the board, including selecting an assignee from the project's member list.
 
-### Planned Frontend State Management
+---
 
-The current API calls work without a dedicated server-state library. However, **TanStack Query** is planned for a later stage of development.
+## Error Handling
 
-The intention is to use TanStack Query for things such as:
-
-- Fetching the current user
-- Fetching projects, project members, and issues
-- Creating, updating, and deleting projects and issues
-- Managing loading states
-- Managing API errors
-- Query caching
-- Invalidating/refetching data after mutations
-
-The initial implementation will continue using `async/await` until the frontend functionality is more established.
+The API uses global exception-handling middleware (built around centralized try/catch logic) so that errors thrown from services are converted into consistent HTTP responses instead of leaking unhandled exceptions. Known exception types (e.g. not-found, forbidden) are mapped to their corresponding HTTP status codes centrally, rather than being caught individually in each controller action.
 
 ---
 
-# Projects
+## DTOs
 
-Users are linked to projects through **Project Members**, allowing a project to have multiple users associated with it, each with a project role.
+The API uses DTOs to control the data sent between client and server rather than exposing database models directly.
 
-The current project relationship is conceptually:
+**Authentication:** `LoginDto`, `RegisterDto`, `UserDto`, `UpdateUserDto`
+**Projects:** `ProjectDto`, `ProjectResponseDto`, `AddMemberDto`, `ProjectMemberDto`
+**Issues:** `CreateIssueDto`, `UpdateIssueDto`, `AssigneeDto`, `IssueResponseDto`
+**Enums:** `UserRole`, `ProjectRole`, `Priority` (`Low`/`Medium`/`High`), `IssueStatus` (`Todo`/`InProgress`/`InReview`/`Done`) — all serialized as string names, not numeric values, via `JsonStringEnumConverter`.
+
+---
+
+## Data Model
 
 ```text
 User
  │
- ├── Project Members
- │       │
- │       └── Project
+ ├── ProjectMember (role: Owner/Member) ── Project
+ │                                            │
+ │                                            └── Issue (status, priority, assignee, createdBy)
  │
- └── Projects they belong to
+ └── Projects they belong to (via ProjectMember)
 ```
 
-This relationship is used for project-level permissions and collaboration.
-
-### Current Project Routes
-
-| Method   | Route                                             | Description                                |
-| -------- | ------------------------------------------------- | ------------------------------------------ |
-| `POST`   | `/api/Project/CreateProject`                      | Create a new project                       |
-| `GET`    | `/api/Project/MyProjects`                         | Get projects belonging to the current user |
-| `GET`    | `/api/Project/{id}`                               | Get a project by ID                        |
-| `PUT`    | `/api/Project/{projectId}`                        | Update a project                           |
-| `DELETE` | `/api/Project/{projectId}`                        | Delete a project                           |
-| `GET`    | `/api/Project/{projectId}/members`                | Get a project's members                    |
-| `POST`   | `/api/Project/{projectId}/members`                | Add a member to a project by email         |
-| `DELETE` | `/api/Project/{projectId}/members/{targetUserId}` | Remove a member from a project             |
+- A **User** can belong to many **Projects** via the **ProjectMember** join entity, which also carries a project-specific role.
+- A **Project** has many **Issues**.
+- An **Issue** belongs to one Project, optionally has one Assignee (a User), and always has a CreatedBy User.
 
 ---
 
-# Issues
+## Getting Started
 
-Issues belong to a project and track work items through a status pipeline (`Todo`, `InProgress`, `InReview`, `Done`).
+> Adjust connection strings, ports, and environment variable names below to match your local `appsettings.Development.json` / `.env` setup.
 
-New issues are always created with a status of `Todo`; status is changed afterwards via update.
+**Backend**
 
-### Current Issue Routes
-
-| Method   | Route                                        | Description                  |
-| -------- | -------------------------------------------- | ---------------------------- |
-| `GET`    | `/api/projects/{projectId}/issues`           | Get all issues for a project |
-| `GET`    | `/api/projects/{projectId}/issues/{issueId}` | Get a single issue by ID     |
-| `POST`   | `/api/projects/{projectId}/issues`           | Create a new issue           |
-| `PUT`    | `/api/projects/{projectId}/issues/{issueId}` | Update an issue              |
-| `DELETE` | `/api/projects/{projectId}/issues/{issueId}` | Delete an issue              |
-
-Only users who are members of a project can view or modify its issues. Assigning an issue to a user requires that user to be a member of the same project.
-
----
-
-# Users
-
-User functionality is currently focused around authentication and retrieving user information.
-
-### Current User Routes
-
-| Method | Route            | Description           |
-| ------ | ---------------- | --------------------- |
-| `GET`  | `/api/User/{id}` | Retrieve a user by ID |
-
----
-
-# Error Handling
-
-The API uses a global exception handling middleware so that errors thrown from services are converted into consistent HTTP responses instead of leaking unhandled exceptions.
-
-Known exception types (e.g. not-found and forbidden cases) are mapped to their corresponding HTTP status codes centrally, rather than being caught individually in each controller action.
-
----
-
-# DTOs
-
-The API uses DTOs to control the data being sent between the client and API rather than exposing database models directly.
-
-### Authentication
-
-- **`LoginDto`** — used when a user logs in
-- **`RegisterDto`** — used when a user creates an account
-- **`UserDto`** — used to return user information from the API
-- **`UpdateUserDto`** — used to update a user's editable fields (name, avatar)
-
-### Projects
-
-- **`ProjectDto`** — used to create or update a project
-- **`ProjectResponseDto`** — used to return project information from the API
-- **`AddMemberDto`** — used to add a member to a project by email
-- **`ProjectMemberDto`** — used to return a project member, including their role and join date
-
-### Issues
-
-- **`CreateIssueDto`** — used to create a new issue
-- **`UpdateIssueDto`** — used to update an existing issue, including its status
-- **`AssigneeDto`** — a lightweight representation of an issue's assignee
-- **`IssueResponseDto`** — used to return issue information from the API
-
-### Enums
-
-- **`UserRole`** — defines the roles available to users within the application
-- **`ProjectRole`** — defines a member's role within a specific project
-- **`Priority`** — an issue's priority (`Low`, `Medium`, `High`)
-- **`IssueStatus`** — an issue's status (`Todo`, `InProgress`, `InReview`, `Done`)
-
-All enums are serialized as their string names (not numeric values) across the API.
-
----
-
-# Current API Structure
-
-```text
-/api
-│
-├── /Auth
-│   ├── POST   /register
-│   ├── POST   /login
-│   ├── GET    /google
-│   ├── GET    /google/complete
-│   ├── GET    /me
-│   └── POST   /Logout
-│
-├── /Project
-│   ├── POST   /CreateProject
-│   ├── GET    /MyProjects
-│   ├── GET    /{id}
-│   ├── PUT    /{projectId}
-│   ├── DELETE /{projectId}
-│   ├── GET    /{projectId}/members
-│   ├── POST   /{projectId}/members
-│   └── DELETE /{projectId}/members/{targetUserId}
-│
-├── /projects/{projectId}/issues
-│   ├── GET    /
-│   ├── GET    /{issueId}
-│   ├── POST   /
-│   ├── PUT    /{issueId}
-│   └── DELETE /{issueId}
-│
-└── /User
-    └── GET    /{id}
+```bash
+cd SprintBoard.Api
+dotnet restore
+dotnet ef database update
+dotnet run
 ```
 
----
+**Frontend**
 
-# Data Model
+```bash
+cd sprintboard-client
+npm install
+npm run dev
+```
 
----
-
-# Technology
-
-The backend is currently being developed using:
-
-- **C#**
-- **ASP.NET Core Web API**
-- **Entity Framework Core**
-- **JWT Authentication**
-- **HttpOnly Cookies**
-- **Google OAuth**
-- **DTOs**
-- **Global exception handling middleware**
-- **REST API**
-
-The frontend is being developed using:
-
-- **React**
-- **JavaScript/TypeScript**
-- **Tailwind CSS**
-- Standard `async/await` API requests
-- **TanStack Query planned for later integration**
-- **SignalR planned for realtime behaviour**
+You'll need to configure Google OAuth client credentials and a JWT signing key in your local configuration for authentication to work end-to-end.
 
 ---
 
-# Roadmap
+## Roadmap
 
-## Authentication
+**Authentication & Users**
 
-- [x] User registration
-- [x] User login
-- [x] JWT authentication
-- [x] HttpOnly authentication cookies
-- [x] Google authentication
-- [x] Current user endpoint
-- [x] Logout
-- [ ] Further authentication/authorization improvements
+- [x] Registration, login, JWT auth, HttpOnly cookies, Google OAuth, current-user endpoint, logout, user roles
+- [ ] Admin-only routes
+- [ ] Further authorization refinement
 
-## Users
+**Projects & Issues**
 
-- [x] User model
-- [x] User DTO
-- [x] Get user by ID
-- [x] User roles
-- [ ] Project-specific permissions
+- [x] Project CRUD, project members, project roles/permissions
+- [x] Issue CRUD, assignment, status tracking
+- [ ] Sprint model, sprint creation, assigning issues to sprints, sprint progress
 
-## Projects
+**Frontend**
 
-- [x] Project model
-- [x] Project member relationship
-- [x] Create project
-- [x] Get user's projects
-- [x] Get project by ID
-- [x] Update project
-- [x] Delete project
-- [x] Add project members
-- [x] Remove project members
-- [x] Project permissions
-- [x] Project roles
-
-## Issues & Sprints
-
-- [x] Issue model
-- [x] Create issues
-- [x] Update issues
-- [x] Delete issues
-- [x] Assign issues to users
-- [x] Issue status
-- [ ] Sprint model
-- [ ] Create sprints
-- [ ] Assign tasks to sprints
-- [ ] Sprint progress
-
-## Frontend
-
-- [x] Initial React application
-- [x] Login page
-- [x] Login page connected to authentication API
-- [x] Authentication using standard `async/await`
-- [x] Registration page
-- [x] Authentication state handling
-- [x] Project list
-- [x] Project Kanban board
-- [x] Issue create/edit/delete modal
-- [x] Assignee picker
-- [ ] Project member management UI
+- [x] Login/registration pages, auth state handling, project list, Kanban board, issue create/edit/delete modal, assignee picker
+- [x] Project member management UI (invite/remove members)
 - [ ] Sprint management UI
-- [ ] Introduce TanStack Query
-- [ ] Migrate suitable API requests to TanStack Query
-- [ ] Add query caching and invalidation
-- [ ] Add mutation handling
+
+**Real-time**
+
+- [ ] SignalR integration for live board/issue updates
 
 ---
 
-# Project Status
+## Planned Improvements
 
-**SprintBoard is currently in the backend/API and frontend development stage.**
-The backend has been successfully deployed using Microsoft Azure.
-The frontend will be deployed soon using Azure Static Web Apps.
-
-Authentication, Project management, and Issue management are in place, including a working Kanban board on the frontend with drag-and-drop status updates, issue CRUD, and an assignee picker backed by project membership.
-
-The current focus is project member management on the frontend and building out Sprint functionality.
-
-TanStack Query is planned for a later stage to improve server-state management as the number of API interactions grows.
+- **TanStack Query** — being considered for server-state management (caching, mutations, loading/error states) as the number of API interactions grows. Not yet implemented, and not guaranteed to be added — the current `async/await` approach works for the app's present scope, so this is a "would improve it" item rather than a committed one.
+- **Route naming consistency** — unify the `/api/Project/...` and `/api/projects/...` conventions.
+- **Same-origin deployment** — resolve the Brave/Safari cookie limitation described above once/if hosting budget allows.
