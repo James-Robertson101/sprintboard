@@ -191,6 +191,30 @@ User
 
 ---
 
+## Architecture Notes
+
+A few backend setup details worth calling out beyond the route/DTO tables above:
+
+- **Database:** PostgreSQL, hosted via Supabase, accessed through EF Core (`UseNpgsql`). Migrations run automatically on startup (see the note on seeding below).
+- **Timestamp interceptor:** a custom `TimestampInterceptor` is registered with the `DbContext` to automatically manage created/updated timestamps at the EF Core save-changes level, rather than setting them manually in each service method.
+- **Dual authentication schemes:** the API's default scheme is JWT Bearer (read from the `access_token` HttpOnly cookie via a custom `OnMessageReceived` handler, rather than the `Authorization` header). A second, temporary cookie-based scheme (`"GoogleTemporary"`) is used only to complete the Google OAuth handshake, after which its result is used to issue the app's own JWT and the temporary cookie is signed out.
+- **CORS:** locked to a single configured `FrontendUrl` origin with `AllowCredentials()`, since cookie-based auth requires the frontend origin to be explicitly whitelisted rather than using a wildcard.
+- **Reverse proxy awareness:** `UseForwardedHeaders` is configured to honour `X-Forwarded-For` / `X-Forwarded-Proto` headers, since Azure App Service sits behind a reverse proxy — without this, things like HTTPS redirection and the `Secure` cookie flag can behave incorrectly in production.
+- **Swagger:** only enabled in the Development environment, not exposed on the live deployment.
+
+## CI/CD
+
+GitHub Actions runs on every push and pull request to `main`, with separate jobs for backend and frontend:
+
+- **Backend:** restores and builds the API (`server/SprintBoard.Api`) and the test project (`server/SprintBoard.Tests`) against .NET 10, then runs the test suite with `dotnet test`.
+- **Frontend:** installs dependencies with `npm ci`, runs lint, then builds the client (`client/`) with Node 22.
+
+This currently covers build and test verification only — there is no automated deployment step; deploying to Azure is done manually.
+
+> **Note on demo data:** on every application startup, `Program.cs` runs database migrations and then re-seeds the database from scratch (`DataSeeder.SeedAsync`). This means any changes made during a live demo session (new issues, edited projects, etc.) will be reset whenever the Azure App Service restarts. This is intentional for keeping the demo in a known-good state, but worth knowing if you're revisiting the demo after some time away.
+
+---
+
 ## Getting Started
 
 > Adjust connection strings, ports, and environment variable names below to match your local `appsettings.Development.json` / `.env` setup.
@@ -233,7 +257,7 @@ You'll need to configure Google OAuth client credentials and a JWT signing key i
 **Frontend**
 
 - [x] Login/registration pages, auth state handling, project list, Kanban board, issue create/edit/delete modal, assignee picker
-- [x] Project member management UI (invite/remove members)
+- [x] Project member management UI (add/remove members)
 - [ ] Sprint management UI
 
 **Real-time**
