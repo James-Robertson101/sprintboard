@@ -5,6 +5,34 @@ namespace SprintBoard.Api.Data;
 public static class DataSeeder
 {
     private const string DemoPassword = "Password123!";
+    private static DateTime _lastSeedUtc = DateTime.MinValue;
+    private static readonly TimeSpan MinInterval = TimeSpan.FromMinutes(5);
+    private static readonly SemaphoreSlim SeedLock = new(1, 1);
+
+    /// <summary>
+    /// Reseeds only if more than MinInterval has passed since the last reseed.
+    /// Safe to call on every page load without wiping data out from under an active visitor.
+    /// </summary>
+    public static async Task SeedIfDueAsync(AppDbContext context)
+    {
+        if (DateTime.UtcNow - _lastSeedUtc < MinInterval)
+            return;
+
+        await SeedLock.WaitAsync();
+        try
+        {
+            if (DateTime.UtcNow - _lastSeedUtc < MinInterval)
+                return; // another request already reseeded while we were waiting
+
+            await SeedAsync(context);
+            _lastSeedUtc = DateTime.UtcNow;
+        }
+        finally
+        {
+            SeedLock.Release();
+        }
+    }
+
 
     public static async Task SeedAsync(AppDbContext context)
     {

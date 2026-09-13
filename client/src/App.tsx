@@ -11,8 +11,13 @@ import ProjectLayout from "./components/layout/ProjectLayout.tsx";
 import ProjectBoard from "./pages/projects/project/ProjectBoard.tsx";
 import ProjectSettings from "./pages/projects/project/ProjectSettings/ProjectSettings.tsx";
 import CreateProject from "./pages/projects/CreateProject.tsx";
-
+import { useEffect } from "react";
+import { reseedIfDue } from "./services/systemService.ts";
 function App() {
+  useEffect(() => {
+    reseedIfDue();
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>
