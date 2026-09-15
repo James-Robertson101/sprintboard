@@ -38,6 +38,7 @@ public static class DataSeeder
     {
         Console.WriteLine("[Seeder] Clearing existing data...");
         // Delete in dependency order (children first)
+        context.Comments.RemoveRange(context.Comments);
         context.Issues.RemoveRange(context.Issues);
         context.ProjectMembers.RemoveRange(context.ProjectMembers);
         context.Projects.RemoveRange(context.Projects);
@@ -138,9 +139,49 @@ public static class DataSeeder
         }
 
         context.Issues.AddRange(issues);
-        await context.SaveChangesAsync();
-        Console.WriteLine("[Seeder] Seeding complete.");
+        await context.SaveChangesAsync(); // generate issue.Ids
 
+        Console.WriteLine("[Seeder] seeding comments...");
+
+        var sampleComments = new[]
+        {
+            "Started looking into this, will update soon.",
+            "Can we get a bit more detail on the acceptance criteria?",
+            "Blocked on the staging environment being down.",
+            "This should be ready for review by EOD.",
+            "Nice work on this — tested locally and it looks solid.",
+            "Reopening, saw a regression on the latest deploy.",
+            "Moved this to in review, @assignee please take a look.",
+            "Do we need a migration for this or is it just a UI change?",
+            "Left a few comments on the PR, nothing blocking.",
+            "Marking as done, verified in staging."
+        };
+
+        var comments = new List<Comment>();
+
+        foreach (var issue in issues)
+        {
+            var commentCount = random.Next(0, 4); // 0–3 comments per issue
+
+            for (int c = 0; c < commentCount; c++)
+            {
+                var author = assignees[random.Next(assignees.Length)];
+                var createdAt = issue.CreatedAt.AddHours(random.Next(1, 72));
+
+                comments.Add(new Comment
+                {
+                    IssueId = issue.Id,
+                    AuthorId = author.Id,
+                    Content = sampleComments[random.Next(sampleComments.Length)],
+                    CreatedAt = createdAt > DateTime.UtcNow ? DateTime.UtcNow : createdAt
+                });
+            }
+        }
+
+        context.Comments.AddRange(comments);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine("[Seeder] Seeding complete.");
     }
 
     private static string Hash(string password) => BCrypt.Net.BCrypt.HashPassword(password);

@@ -10,7 +10,8 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
-    public DbSet<Issue> Issues { get; set; }
+    public DbSet<Issue> Issues => Set<Issue>();
+    public DbSet<Comment> Comments => Set<Comment>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -34,5 +35,18 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(i => i.AssigneeId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Comment>()
+            .HasOne(c => c.Issue)
+            .WithMany(i => i.Comments)
+            .HasForeignKey(c => c.IssueId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Comment>()
+            .HasOne(c => c.Author)
+            .WithMany()
+            .HasForeignKey(c => c.AuthorId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
+
 }

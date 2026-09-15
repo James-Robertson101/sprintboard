@@ -30,4 +30,5 @@ public class Issue
 
     // Optional lifecycle information
     public DateTime? UpdatedAt { get; set; }
+    public List<Comment> Comments { get; set; } = new();
 }
