@@ -4,7 +4,6 @@ function ProjectNavigation() {
   const navigation = [
     { name: "Board", to: "board" },
     { name: "Backlog", to: "backlog" },
-    { name: "Issues", to: "issues" },
     { name: "Sprints", to: "sprints" },
     { name: "Reports", to: "reports" },
     { name: "Project Settings", to: "projectSettings" },

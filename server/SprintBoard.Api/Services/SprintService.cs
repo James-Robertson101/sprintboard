@@ -57,16 +57,16 @@ public class SprintService : ISprintService
             throw new ArgumentException("Sprint name is required.");
 
         var sprint = new Sprint
-        {
-            ProjectId = projectId,
-            Name = dto.Name.Trim(),
-            Goal = string.IsNullOrWhiteSpace(dto.Goal)
-                ? null
-                : dto.Goal.Trim(),
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
-            Status = SprintStatus.Planned
-        };
+{
+        ProjectId = projectId,
+        Name = dto.Name.Trim(),
+        Goal = string.IsNullOrWhiteSpace(dto.Goal)
+        ? null
+        : dto.Goal.Trim(),
+        StartDate = ToUtc(dto.StartDate),
+        EndDate = ToUtc(dto.EndDate),
+        Status = SprintStatus.Planned
+};
 
         await _sprintRepository.AddAsync(sprint);
         await _sprintRepository.SaveChangesAsync();
@@ -101,8 +101,8 @@ public class SprintService : ISprintService
             ? null
             : dto.Goal.Trim();
 
-        sprint.StartDate = dto.StartDate;
-        sprint.EndDate = dto.EndDate;
+        sprint.StartDate = ToUtc(dto.StartDate);
+        sprint.EndDate = ToUtc(dto.EndDate);
 
         _sprintRepository.Update(sprint);
 
@@ -207,6 +207,10 @@ public class SprintService : ISprintService
                 "Sprint end date must be after the start date.");
         }
     }
+    private static DateTime ToUtc(DateTime date)
+{
+    return DateTime.SpecifyKind(date, DateTimeKind.Utc);
+}
 
     private static SprintResponseDto MapToDto(Sprint sprint)
     {

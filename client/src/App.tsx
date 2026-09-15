@@ -6,7 +6,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./pages/auth/Login.tsx";
 import Register from "./pages/auth/Register.tsx";
 import ProjectList from "./pages/projects/ProjectList.tsx";
-
+import Sprints from "./pages/projects/Sprints/Sprints.tsx";
 import ProjectLayout from "./components/layout/ProjectLayout.tsx";
 import ProjectBoard from "./pages/projects/project/ProjectBoard.tsx";
 import ProjectSettings from "./pages/projects/project/ProjectSettings/ProjectSettings.tsx";
@@ -37,7 +37,7 @@ function App() {
               <Route path="board" element={<ProjectBoard />} />
               <Route path="backlog" element={<ProjectBoard />} />
               <Route path="issues" element={<ProjectBoard />} />
-              <Route path="sprints" element={<ProjectBoard />} />
+              <Route path="sprints" element={<Sprints />} />
               <Route path="reports" element={<ProjectBoard />} />
               <Route path="projectSettings" element={<ProjectSettings />} />
             </Route>
