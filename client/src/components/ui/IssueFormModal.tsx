@@ -7,8 +7,10 @@ import type {
   Priority,
   UpdateIssuePayload,
 } from "../../types/Issue";
+import CommentsSection from "./CommentsSection";
 
 interface IssueFormModalProps {
+  projectId: string;
   mode: "create" | "edit";
   initialStatus: IssueStatus;
   issue?: Issue;
@@ -32,6 +34,7 @@ const inputStyles =
 const labelStyles = "mb-1.5 block text-sm font-medium text-slate-700";
 
 function IssueFormModal({
+  projectId,
   mode,
   initialStatus,
   issue,
@@ -127,7 +130,7 @@ function IssueFormModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
       >
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-slate-900">
@@ -285,6 +288,9 @@ function IssueFormModal({
               </button>
             </div>
           </form>
+        )}
+        {mode === "edit" && issue && (
+          <CommentsSection projectId={projectId} issueId={issue.id} />
         )}
       </div>
     </div>

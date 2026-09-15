@@ -156,6 +156,7 @@ function ProjectBoard() {
 
       {modalState?.mode === "create" && (
         <IssueFormModal
+          projectId={projectId!}
           mode="create"
           initialStatus={modalState.status}
           members={members}
@@ -167,6 +168,7 @@ function ProjectBoard() {
 
       {modalState?.mode === "edit" && (
         <IssueFormModal
+          projectId={projectId!}
           mode="edit"
           initialStatus={modalState.issue.status}
           issue={modalState.issue}
