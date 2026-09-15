@@ -87,6 +87,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<ISprintRepository, SprintRepository>();
+builder.Services.AddScoped<ISprintService, SprintService>();
 builder.Services.AddScoped<IIssueService,IssueService>();
 builder.Services.AddScoped<IIssueRepository,IssueRepository>();
 builder.Services.AddScoped<ICommentService, CommentService>();

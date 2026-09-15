@@ -8,5 +8,7 @@ public class Project
   public string? Description {get;set;}
   public string? Icon {get;set;}
   public List<ProjectMember> ProjectMembers {get; set; } = new();
+  public List<Issue> Issues { get; set; } = new();
 
+    public List<Sprint> Sprints { get; set; } = new();
 }

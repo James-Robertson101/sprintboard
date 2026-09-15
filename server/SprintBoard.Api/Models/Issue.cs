@@ -7,7 +7,9 @@ public class Issue
     // Project relationship
     public int ProjectId { get; set; }
     public Project Project { get; set; } = null!;
-
+    // Sprint relationship
+    public int? SprintId { get; set; }
+    public Sprint? Sprint { get; set; }
     // Basic issue information
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
