@@ -10,12 +10,14 @@ namespace SprintBoard.Api.Tests.Services;
 public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _userRepositoryMock;
+    private readonly Mock<IUserDeletionService> _deletionServiceMock;
     private readonly UserService _sut; // system under test
 
     public UserServiceTests()
     {
         _userRepositoryMock = new Mock<IUserRepository>();
-        _sut = new UserService(_userRepositoryMock.Object);
+        _deletionServiceMock = new Mock<IUserDeletionService>();
+        _sut = new UserService(_userRepositoryMock.Object, _deletionServiceMock.Object);
     }
 
     [Fact]

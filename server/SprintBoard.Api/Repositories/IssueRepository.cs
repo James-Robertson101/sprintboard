@@ -17,6 +17,7 @@ public class IssueRepository : IIssueRepository
     public async Task<Issue?> GetByIdAsync(int id)
     {
         return await _context.Issues
+            .IgnoreQueryFilters()
             .Include(i => i.Assignee)
             .Include(i => i.CreatedBy)
             .FirstOrDefaultAsync(i => i.Id == id);
@@ -25,6 +26,7 @@ public class IssueRepository : IIssueRepository
     public async Task<List<Issue>> GetCurrentIssues(int projectId)
     {
         return await _context.Issues
+        .IgnoreQueryFilters()
         .Include(i => i.Assignee)
         .Include(i => i.CreatedBy)
         .Include(i => i.Sprint)
@@ -36,6 +38,7 @@ public class IssueRepository : IIssueRepository
     public async Task<List<Issue>> GetByProjectIdAsync(int projectId)
     {
         return await _context.Issues
+            .IgnoreQueryFilters()
             .Include(i => i.Assignee)
             .Include(i => i.CreatedBy)
             .Where(i => i.ProjectId == projectId)

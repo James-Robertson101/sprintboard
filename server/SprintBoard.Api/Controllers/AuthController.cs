@@ -150,6 +150,49 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    //Put /api/auth/me
+    [Authorize]
+    [HttpPut("me")]
+    public async Task<ActionResult<UserDto>> UpdateMe(
+        UpdateProfileDto dto)
+    {
+        var userIdClaim = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null ||
+            !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userService.UpdateProfileAsync(
+            userId,
+            dto);
+
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(user);
+    }
+
+    [Authorize]
+
+[HttpDelete("{id:int}")]
+[Authorize]
+public async Task<IActionResult> DeleteUser(int id)
+{
+    var requestingUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    var result = await _userService.DeleteAsync(id, requestingUserId);
+
+    if (result.IsNotFound) return NotFound();
+    if (!result.Succeeded) return Conflict(new { message = result.Error });
+
+    return NoContent();
+}
+
     private void SetAccessTokenCookie(string token)
     {
         var expiry = DateTimeOffset.UtcNow.AddHours(

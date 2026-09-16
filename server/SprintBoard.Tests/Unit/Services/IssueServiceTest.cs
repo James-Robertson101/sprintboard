@@ -12,6 +12,7 @@ public class IssueServiceTests
 {
     private readonly Mock<IIssueRepository> _issueRepositoryMock;
     private readonly Mock<IProjectRepository> _projectRepositoryMock;
+    private readonly Mock<ISprintRepository> _sprintRepositoryMock;
     private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly IssueService _sut; // system under test
 
@@ -20,11 +21,13 @@ public class IssueServiceTests
         _issueRepositoryMock = new Mock<IIssueRepository>();
         _projectRepositoryMock = new Mock<IProjectRepository>();
         _userRepositoryMock = new Mock<IUserRepository>();
-
+        _sprintRepositoryMock = new Mock<ISprintRepository>();
+        
         _sut = new IssueService(
             _issueRepositoryMock.Object,
             _projectRepositoryMock.Object,
-            _userRepositoryMock.Object);
+            _userRepositoryMock.Object,
+            _sprintRepositoryMock.Object);
     }
 
 

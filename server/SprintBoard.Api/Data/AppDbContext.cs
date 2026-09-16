@@ -22,6 +22,9 @@ public class AppDbContext : DbContext
             typeof(AppDbContext).Assembly
         );
 
+        modelBuilder.Entity<User>()
+            .HasQueryFilter(u => !u.IsDeleted);
+
         modelBuilder.Entity<ProjectMember>()
             .Property(pm => pm.RowVersion)
             .HasColumnName("xmin")

@@ -17,6 +17,7 @@ public class CommentRepository : ICommentRepository
     public async Task<List<Comment>> GetByIssueIdAsync(int issueId)
     {
         return await _db.Comments
+            .IgnoreQueryFilters()
             .Include(c => c.Author)
             .Where(c => c.IssueId == issueId)
             .OrderBy(c => c.CreatedAt)
@@ -26,6 +27,7 @@ public class CommentRepository : ICommentRepository
     public async Task<Comment?> GetByIdAsync(int commentId)
     {
         return await _db.Comments
+            .IgnoreQueryFilters()
             .Include(c => c.Author)
             .Include(c => c.Issue)
             .FirstOrDefaultAsync(c => c.Id == commentId);

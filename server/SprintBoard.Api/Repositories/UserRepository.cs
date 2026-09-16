@@ -53,4 +53,5 @@ public async Task<List<User>> SearchUsersAsync(string? search)
 
     return await query.ToListAsync();
 }
+
 }

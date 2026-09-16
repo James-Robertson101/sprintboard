@@ -12,4 +12,7 @@ public class User
   public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
   public List<ProjectMember> ProjectMembers {get; set;} = new();
 
+   // Soft delete
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 }
