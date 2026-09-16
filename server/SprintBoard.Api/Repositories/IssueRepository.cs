@@ -22,6 +22,17 @@ public class IssueRepository : IIssueRepository
             .FirstOrDefaultAsync(i => i.Id == id);
     }
 
+    public async Task<List<Issue>> GetCurrentIssues(int projectId)
+    {
+        return await _context.Issues
+        .Include(i => i.Assignee)
+        .Include(i => i.CreatedBy)
+        .Include(i => i.Sprint)
+        .Where(i => i.ProjectId == projectId)
+        .Where(i => i.Sprint != null && i.Sprint.Status == SprintStatus.Active)
+        .ToListAsync();
+    }
+
     public async Task<List<Issue>> GetByProjectIdAsync(int projectId)
     {
         return await _context.Issues

@@ -33,6 +33,14 @@ public class IssueService : IIssueService
         return issues.Select(MapToDto).ToList();
     }
 
+    public async Task<List<IssueResponseDto>> GetCurrentIssues(int projectId, int userId)
+    {
+        var project = await GetProjectAndVerifyMembershipAsync(projectId, userId);
+
+        var issues = await _issueRepository.GetCurrentIssues(project.Id);
+        return issues.Select(MapToDto).ToList();
+    }
+
     public async Task<IssueResponseDto> GetIssueByIdAsync(int projectId, int issueId, int userId)
     {
         await GetProjectAndVerifyMembershipAsync(projectId, userId);

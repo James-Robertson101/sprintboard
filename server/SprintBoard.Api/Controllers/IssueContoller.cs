@@ -28,6 +28,13 @@ public class IssuesController : ControllerBase
         return Ok(issues);
     }
 
+    [HttpGet("current")]
+    public async Task<ActionResult<List<IssueResponseDto>>> GetCurrentIssues(int projectId)
+    {
+        var issues = await _issueService.GetCurrentIssues(projectId, CurrentUserId);
+        return Ok(issues);
+    }
+
     [HttpGet("{issueId:int}")]
     public async Task<ActionResult<IssueResponseDto>> GetIssueById(int projectId, int issueId)
     {

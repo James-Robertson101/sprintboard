@@ -4,7 +4,7 @@ import type { Assignee, Issue, IssueStatus } from "../../../types/Issue";
 import {
   createIssue,
   deleteIssue,
-  getIssues,
+  getCurrentIssues,
   updateIssue,
 } from "../../../services/issueService";
 import { getProjectMembers } from "../../../services/projectService";
@@ -42,7 +42,7 @@ function ProjectBoard() {
       setLoadError(null);
       try {
         const [issuesData, membersData] = await Promise.all([
-          getIssues(projectId!),
+          getCurrentIssues(projectId!),
           getProjectMembers(projectId!),
         ]);
         if (!isCancelled) {

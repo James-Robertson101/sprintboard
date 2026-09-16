@@ -24,6 +24,18 @@ export async function getIssues(projectId: string | number): Promise<Issue[]> {
   return handleResponse<Issue[]>(res);
 }
 
+export async function getCurrentIssues(
+  projectId: string | number,
+): Promise<Issue[]> {
+  const res = await fetch(
+    `${API_BASE}/api/projects/${projectId}/issues/current`,
+    {
+      credentials: "include",
+    },
+  );
+  return handleResponse<Issue[]>(res);
+}
+
 export async function getIssueById(
   projectId: string | number,
   issueId: number,
