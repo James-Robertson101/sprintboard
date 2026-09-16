@@ -63,7 +63,7 @@ public class SprintService : ISprintService
         Goal = string.IsNullOrWhiteSpace(dto.Goal)
         ? null
         : dto.Goal.Trim(),
-        StartDate = ToUtc(dto.StartDate),
+         StartDate = ToUtc(dto.StartDate),
         EndDate = ToUtc(dto.EndDate),
         Status = SprintStatus.Planned
 };

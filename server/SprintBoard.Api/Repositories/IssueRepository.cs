@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SprintBoard.Api.Data;
+using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Models;
 
 namespace SprintBoard.Api.Repositories;
@@ -56,4 +57,27 @@ public class IssueRepository : IIssueRepository
         _context.Issues.Remove(issue);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<IssueResponseDto>> GetBacklogAsync(int projectId)
+{
+    return await _context.Issues
+        .Where(i => i.ProjectId == projectId && i.SprintId == null)
+        .Select(i => new IssueResponseDto(
+            i.Id,
+            i.Name,
+            i.Description,
+            i.Priority,
+            i.Status,
+            i.Assignee == null
+                ? null
+                : new AssigneeDto(
+                    i.Assignee.Id,
+                    i.Assignee.Name,
+                    i.Assignee.AvatarUrl
+                ),
+            i.CreatedAt,
+            i.UpdatedAt
+        ))
+        .ToListAsync();
+}
 }

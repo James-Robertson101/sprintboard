@@ -10,15 +10,19 @@ public class IssueService : IIssueService
     private readonly IIssueRepository _issueRepository;
     private readonly IProjectRepository _projectRepository;
     private readonly IUserRepository _userRepository;
+    private readonly ISprintRepository _sprintRepository;
 
     public IssueService(
         IIssueRepository issueRepository,
         IProjectRepository projectRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        ISprintRepository sprintRepository
+        )
     {
         _issueRepository = issueRepository;
         _projectRepository = projectRepository;
         _userRepository = userRepository;
+        _sprintRepository = sprintRepository;
     }
 
     public async Task<List<IssueResponseDto>> GetIssuesForProjectAsync(int projectId, int userId)
@@ -110,6 +114,59 @@ public class IssueService : IIssueService
         await _issueRepository.DeleteAsync(issue);
     }
 
+    public async Task<List<IssueResponseDto>> GetBacklogAsync(int projectId, int currentUserId)
+{
+    await GetProjectAndVerifyMembershipAsync(
+        projectId,
+        currentUserId);
+
+    var issues = await _issueRepository.GetBacklogAsync(projectId);
+    return issues;
+}
+
+    public async Task<IssueResponseDto> AssignIssueToSprintAsync(
+    int projectId,
+    int issueId,
+    int userId,
+    AssignIssueToSprintDto dto)
+{
+    // Verify the current user can access this project.
+    await GetProjectAndVerifyMembershipAsync(projectId, userId);
+
+    // Make sure the issue exists and belongs to this project.
+    var issue = await _issueRepository.GetByIdAsync(issueId);
+
+    if (issue is null || issue.ProjectId != projectId)
+    {
+        throw new NotFoundException("Issue not found.");
+    }
+
+    // null means "move to backlog".
+    if (dto.SprintId is null)
+    {
+        issue.SprintId = null;
+    }
+    else
+    {
+        // Verify that the sprint exists and belongs to this project.
+        var sprint = await _sprintRepository.GetByIdAsync(
+            projectId,
+            dto.SprintId.Value);
+
+        if (sprint is null)
+        {
+            throw new NotFoundException("Sprint not found.");
+        }
+
+        issue.SprintId = sprint.Id;
+    }
+
+    issue.UpdatedAt = DateTime.UtcNow;
+
+    var updated = await _issueRepository.UpdateAsync(issue);
+
+    return MapToDto(updated);
+}
     // --- Helpers ---
     // NOTE: authorization rules below are a starting point (any project member
     // can create/edit/delete issues). Tighten these if you want role-specific

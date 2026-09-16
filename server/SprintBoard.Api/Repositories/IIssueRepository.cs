@@ -1,3 +1,4 @@
+using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Models;
 
 namespace SprintBoard.Api.Repositories;
@@ -9,4 +10,5 @@ public interface IIssueRepository
     Task<Issue> CreateAsync(Issue issue);
     Task<Issue> UpdateAsync(Issue issue);
     Task DeleteAsync(Issue issue);
+    Task<List<IssueResponseDto>> GetBacklogAsync(int projectId);
 }

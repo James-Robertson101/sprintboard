@@ -55,4 +55,28 @@ public class IssuesController : ControllerBase
         await _issueService.DeleteIssueAsync(projectId, issueId, CurrentUserId);
         return NoContent();
     }
+
+    //Backlog methods:
+    [HttpGet("~/api/projects/{projectId:int}/backlog")]
+    public async Task<ActionResult<List<IssueResponseDto>>> GetBacklog(int projectId)
+    {
+        var issues = await _issueService.GetBacklogAsync(
+        projectId,
+        CurrentUserId);
+
+        return Ok(issues);
+    }
+    
+    [HttpPut("{issueId:int}/sprint")]
+    public async Task<ActionResult<IssueResponseDto>> AssignIssueToSprint(int projectId, int issueId,
+    [FromBody] AssignIssueToSprintDto dto)
+    {
+        var updated = await _issueService.AssignIssueToSprintAsync(
+            projectId,
+            issueId,
+            CurrentUserId,
+            dto);
+
+        return Ok(updated);
+    }
 }

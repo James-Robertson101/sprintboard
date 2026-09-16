@@ -9,4 +9,6 @@ public interface IIssueService
     Task<IssueResponseDto> CreateIssueAsync(int projectId, int userId, CreateIssueDto dto);
     Task<IssueResponseDto> UpdateIssueAsync(int projectId, int issueId, int userId, UpdateIssueDto dto);
     Task DeleteIssueAsync(int projectId, int issueId, int userId);
+    Task<List<IssueResponseDto>> GetBacklogAsync(int projectId, int currentUserId);
+    Task<IssueResponseDto> AssignIssueToSprintAsync(int projectId, int issueId, int userId, AssignIssueToSprintDto dto);
 }

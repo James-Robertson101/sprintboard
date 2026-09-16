@@ -33,3 +33,7 @@ public record IssueResponseDto(
     DateTime CreatedAt,
     DateTime? UpdatedAt
 );
+
+public record AssignIssueToSprintDto(
+    int? SprintId
+);
