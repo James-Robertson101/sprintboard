@@ -9,10 +9,12 @@ import ProjectList from "./pages/projects/ProjectList.tsx";
 import Sprints from "./pages/projects/Sprints/Sprints.tsx";
 import ProjectLayout from "./components/layout/ProjectLayout.tsx";
 import ProjectBoard from "./pages/projects/project/ProjectBoard.tsx";
+import Backlog from "./pages/projects/project/Backlog.tsx";
 import ProjectSettings from "./pages/projects/project/ProjectSettings/ProjectSettings.tsx";
 import CreateProject from "./pages/projects/CreateProject.tsx";
 import { useEffect } from "react";
 import { reseedIfDue } from "./services/systemService.ts";
+
 function App() {
   useEffect(() => {
     reseedIfDue();
@@ -35,8 +37,7 @@ function App() {
             <Route path="/projects/:projectId" element={<ProjectLayout />}>
               <Route index element={<Navigate to="board" replace />} />
               <Route path="board" element={<ProjectBoard />} />
-              <Route path="backlog" element={<ProjectBoard />} />
-              <Route path="issues" element={<ProjectBoard />} />
+              <Route path="backlog" element={<Backlog />} />
               <Route path="sprints" element={<Sprints />} />
               <Route path="reports" element={<ProjectBoard />} />
               <Route path="projectSettings" element={<ProjectSettings />} />

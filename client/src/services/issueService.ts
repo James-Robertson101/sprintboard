@@ -78,3 +78,27 @@ export async function deleteIssue(
   );
   return handleResponse<void>(res);
 }
+
+export async function getBacklog(projectId: string | number): Promise<Issue[]> {
+  const res = await fetch(`${API_BASE}/api/projects/${projectId}/backlog`, {
+    credentials: "include",
+  });
+  return handleResponse<Issue[]>(res);
+}
+
+export async function assignIssueToSprint(
+  projectId: string | number,
+  issueId: number,
+  sprintId: number | null,
+): Promise<Issue> {
+  const res = await fetch(
+    `${API_BASE}/api/projects/${projectId}/issues/${issueId}/sprint`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ sprintId }),
+    },
+  );
+  return handleResponse<Issue>(res);
+}
