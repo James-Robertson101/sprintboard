@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintBoard.Api.DTOs;
+using SprintBoard.Api.Models;
 using SprintBoard.Api.Services;
 
 namespace SprintBoard.Api.Controllers;
@@ -137,16 +138,7 @@ public class AuthController : ControllerBase
     [HttpPost("Logout")]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete(
-            "access_token",
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Path = "/"
-            });
-
+        ClearAccessTokenCookie();
         return NoContent();
     }
 
@@ -177,10 +169,8 @@ public class AuthController : ControllerBase
         return Ok(user);
     }
 
-    [Authorize]
-
+[Authorize(Roles = nameof(UserRole.Admin))]
 [HttpDelete("{id:int}")]
-[Authorize]
 public async Task<IActionResult> DeleteUser(int id)
 {
     var requestingUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -190,6 +180,21 @@ public async Task<IActionResult> DeleteUser(int id)
     if (result.IsNotFound) return NotFound();
     if (!result.Succeeded) return Conflict(new { message = result.Error });
 
+    return NoContent();
+}
+
+[HttpDelete("me")]
+[Authorize]
+public async Task<IActionResult> DeleteMyAccount()
+{
+    var requestingUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    var result = await _userService.DeleteMyAccountAsync(requestingUserId);
+
+    if (result.IsNotFound) return NotFound();
+    if (!result.Succeeded) return Conflict(new { message = result.Error });
+
+    ClearAccessTokenCookie();
     return NoContent();
 }
 
@@ -211,5 +216,18 @@ public async Task<IActionResult> DeleteUser(int id)
                 Path = "/"
             });
     }
+
+    private void ClearAccessTokenCookie()
+{
+    Response.Cookies.Delete(
+        "access_token",
+        new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Path = "/"
+        });
+}
 }
 

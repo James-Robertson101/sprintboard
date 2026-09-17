@@ -8,4 +8,6 @@ public interface IUserRepository
     Task<User?> FindByGoogleIdAsync(string googleId);
     Task UpdateAsync(User user);
     Task<List<User>> SearchUsersAsync(string? search);
+    Task<bool> IsSoleOwnerOfAnyProjectAsync(int userId);
+    Task RemoveActiveProjectMembershipsAsync(int userId);
     }

@@ -1,62 +1,68 @@
-using Microsoft.EntityFrameworkCore;
-using SprintBoard.Api.Data;
 using SprintBoard.Api.Models;
+using SprintBoard.Api.Repositories;
 using SprintBoard.Api.DTOs;
 
 namespace SprintBoard.Api.Services;
+
 public class UserDeletionService : IUserDeletionService
 {
-    private readonly AppDbContext _db;
+    private readonly IUserRepository _userRepository;
 
-    public UserDeletionService(AppDbContext db) => _db = db;
-
-    public async Task<UserDeletionResult> DeleteUserAsync(int userId, int requestingUserId)
+    public UserDeletionService(IUserRepository userRepository)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        _userRepository = userRepository;
+    }
+
+    public async Task<UserDeletionResult> DeleteMyAccountAsync(int userId)
+    {
+        return await DeleteAccountInternalAsync(userId);
+    }
+
+    public async Task<UserDeletionResult> DeleteUserAsync(
+        int userId,
+        int requestingUserId)
+    {
+        if (userId == requestingUserId)
+        {
+            return UserDeletionResult.Conflict(
+                "Use the delete-my-account operation to delete your own account.");
+        }
+
+        return await DeleteAccountInternalAsync(userId);
+    }
+
+    private async Task<UserDeletionResult> DeleteAccountInternalAsync(
+        int userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+
         if (user is null)
             return UserDeletionResult.NotFound();
 
-        if (user.Id == requestingUserId)
-            return UserDeletionResult.Conflict("You can't delete your own account.");
+        var isSoleOwner =
+            await _userRepository.IsSoleOwnerOfAnyProjectAsync(userId);
 
-        // Block if this user is the sole Owner on any project
-        var soleOwnerProjectIds = await _db.ProjectMembers
-            .Where(pm => pm.RemovedTime == null && pm.ProjectRole == ProjectRole.Owner)
-            .GroupBy(pm => pm.ProjectId)
-            .Where(g => g.Count() == 1 && g.Any(pm => pm.UserId == userId))
-            .Select(g => g.Key)
-            .ToListAsync();
-
-        if (soleOwnerProjectIds.Count > 0)
+        if (isSoleOwner)
         {
             return UserDeletionResult.Conflict(
-                $"User is the sole owner of {soleOwnerProjectIds.Count} project(s). " +
+                "User is the sole owner of one or more projects. " +
                 "Transfer ownership before deleting.");
         }
 
-        using var tx = await _db.Database.BeginTransactionAsync();
+        await _userRepository.RemoveActiveProjectMembershipsAsync(userId);
 
-        // Soft-remove active project memberships (mirrors your existing pattern)
-        var activeMemberships = await _db.ProjectMembers
-            .Where(pm => pm.UserId == userId && pm.RemovedTime == null)
-            .ToListAsync();
+        var now = DateTime.UtcNow;
 
-        foreach (var pm in activeMemberships)
-            pm.RemovedTime = DateTime.UtcNow;
-
-        // Soft-delete + scrub PII
         user.IsDeleted = true;
-        user.DeletedAt = DateTime.UtcNow;
+        user.DeletedAt = now;
         user.Email = $"deleted-user-{user.Id}@sprintboard.invalid";
         user.PasswordHash = null;
         user.GoogleId = null;
         user.AvatarUrl = null;
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = now;
 
-        await _db.SaveChangesAsync();
-        await tx.CommitAsync();
+        await _userRepository.UpdateAsync(user);
 
         return UserDeletionResult.Success();
     }
 }
-

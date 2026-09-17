@@ -54,4 +54,31 @@ public async Task<List<User>> SearchUsersAsync(string? search)
     return await query.ToListAsync();
 }
 
+ public async Task<bool> IsSoleOwnerOfAnyProjectAsync(int userId)
+    {
+        return await _db.ProjectMembers
+            .Where(pm =>
+                pm.RemovedTime == null &&
+                pm.ProjectRole == ProjectRole.Owner)
+            .GroupBy(pm => pm.ProjectId)
+            .AnyAsync(g =>
+                g.Count() == 1 &&
+                g.Any(pm => pm.UserId == userId));
+    }
+
+public async Task RemoveActiveProjectMembershipsAsync(int userId)
+    {
+        var memberships = await _db.ProjectMembers
+            .Where(pm =>
+                pm.UserId == userId &&
+                pm.RemovedTime == null)
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+
+        foreach (var membership in memberships)
+        {
+            membership.RemovedTime = now;
+        }
+    }
 }

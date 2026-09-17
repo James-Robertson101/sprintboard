@@ -47,6 +47,9 @@ public class UserService : IUserService
     }
 
     public Task<UserDeletionResult> DeleteAsync(int userId, int requestingUserId)
-        => _deletionService.DeleteUserAsync(userId, requestingUserId);    
+        => _deletionService.DeleteUserAsync(userId, requestingUserId);  
+
+    public Task<UserDeletionResult> DeleteMyAccountAsync(int requestingUserId)
+        => _deletionService.DeleteMyAccountAsync(requestingUserId);    
 
 }
