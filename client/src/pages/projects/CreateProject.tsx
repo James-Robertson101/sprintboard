@@ -1,11 +1,9 @@
 import { useState } from "react";
 import AvatarModal from "../../components/auth/AvatarModal";
 import Button from "../../components/ui/Button";
-import TopNav from "../../components/layout/TopNav";
 import { createProject } from "../../services/projectService";
 import type { ProjectData } from "../../types/project";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/useAuth";
 
 function CreateProject() {
   const [projectName, setProjectName] = useState("");
@@ -14,7 +12,6 @@ function CreateProject() {
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
 
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,12 +33,6 @@ function CreateProject() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TopNav
-        name={user?.name}
-        email={user?.email}
-        avatarUrl={user?.avatarUrl}
-      />
-
       <main className="mx-auto flex w-full max-w-3xl justify-center px-6 py-10 lg:px-8">
         <div className="w-full">
           {/* Page heading */}

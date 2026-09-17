@@ -1,18 +1,14 @@
 import { useEffect, useState } from "react";
-import TopNav from "../../components/layout/TopNav";
+
 import ProjectSearch from "../../components/projects/ProjectSearch";
 import type { Project } from "../../types/project";
 import { getProjects } from "../../services/projectService";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/useAuth";
-import Sidebar from "../../components/layout/Sidebar";
 
 function ProjectList() {
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [projectList, setProjectList] = useState<Project[]>([]);
-
-  const { user } = useAuth();
 
   function handleSubmit() {
     setSubmittedSearch(search);
@@ -36,15 +32,7 @@ function ProjectList() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TopNav
-        name={user?.name}
-        email={user?.email}
-        avatarUrl={user?.avatarUrl}
-      />
-
       <div className="flex">
-        <Sidebar />
-
         <main className="min-w-0 flex-1">
           <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
             {/* Page heading */}
