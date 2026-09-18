@@ -16,19 +16,6 @@ function Sidebar() {
         >
           Projects
         </NavLink>
-
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            `flex items-center rounded-lg px-4 py-3 text-sm font-medium ${
-              isActive
-                ? "bg-indigo-50 text-indigo-700"
-                : "text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-            }`
-          }
-        >
-          Dashboard
-        </NavLink>
       </nav>
     </aside>
   );

@@ -10,6 +10,7 @@ import {
 import { getProjectMembers } from "../../../services/projectService";
 import BoardColumn from "../../../components/ui/BoardColumn";
 import IssueFormModal from "../../../components/ui/IssueFormModal";
+import { useProjectRoom } from "../../../signalr/useProjectRoom";
 
 const COLUMNS: { status: IssueStatus; label: string }[] = [
   { status: "Todo", label: "To do" },
@@ -20,7 +21,7 @@ const COLUMNS: { status: IssueStatus; label: string }[] = [
 
 function ProjectBoard() {
   const { projectId } = useParams();
-
+  useProjectRoom(projectId);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [members, setMembers] = useState<Assignee[]>([]);
   const [isLoading, setIsLoading] = useState(true);

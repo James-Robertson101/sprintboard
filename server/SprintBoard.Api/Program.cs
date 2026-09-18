@@ -9,9 +9,10 @@ using SprintBoard.Api.Data.Interceptors;
 using SprintBoard.Api.Middleware;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
+using SprintBoard.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddSignalR();
 builder.Services.AddScoped<TimestampInterceptor>(); 
 builder.Services.AddDbContext<AppDbContext>((sp,options) =>
     options.UseNpgsql(
@@ -102,7 +103,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -126,5 +126,6 @@ app.UseHttpsRedirection();
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHub<SprintBoardHub>("/hub/sprintboard");
 app.MapControllers();
 app.Run();

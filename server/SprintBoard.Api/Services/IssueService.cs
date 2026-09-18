@@ -2,6 +2,8 @@ using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Exceptions;
 using SprintBoard.Api.Models;
 using SprintBoard.Api.Repositories;
+using Microsoft.AspNetCore.SignalR;
+using SprintBoard.Api.Hubs;
 
 namespace SprintBoard.Api.Services;
 
@@ -11,18 +13,21 @@ public class IssueService : IIssueService
     private readonly IProjectRepository _projectRepository;
     private readonly IUserRepository _userRepository;
     private readonly ISprintRepository _sprintRepository;
+    private readonly IHubContext<SprintBoardHub> _hubContext;
 
     public IssueService(
         IIssueRepository issueRepository,
         IProjectRepository projectRepository,
         IUserRepository userRepository,
-        ISprintRepository sprintRepository
+        ISprintRepository sprintRepository,
+        IHubContext<SprintBoardHub> hubContext
         )
     {
         _issueRepository = issueRepository;
         _projectRepository = projectRepository;
         _userRepository = userRepository;
         _sprintRepository = sprintRepository;
+        _hubContext = hubContext;
     }
 
     public async Task<List<IssueResponseDto>> GetIssuesForProjectAsync(int projectId, int userId)
@@ -78,7 +83,13 @@ public class IssueService : IIssueService
         };
 
         var created = await _issueRepository.CreateAsync(issue);
-        return MapToDto(created);
+        var response = MapToDto(created);
+        await _hubContext.Clients
+        .Group($"project-{projectId}")
+        .SendAsync("IssueCreated", response);
+
+        return response;
+
     }
 
     public async Task<IssueResponseDto> UpdateIssueAsync(int projectId, int issueId, int userId, UpdateIssueDto dto)
