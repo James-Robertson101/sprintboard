@@ -122,7 +122,12 @@ public class IssueService : IIssueService
         issue.UpdatedAt = DateTime.UtcNow;
 
         var updated = await _issueRepository.UpdateAsync(issue);
-        return MapToDto(updated);
+        var response = MapToDto(updated);
+        await _hubContext.Clients
+        .Group($"project-{projectId}")
+        .SendAsync("IssueUpdated", response);
+
+        return response;
     }
 
     public async Task DeleteIssueAsync(int projectId, int issueId, int userId)
@@ -136,6 +141,9 @@ public class IssueService : IIssueService
         }
 
         await _issueRepository.DeleteAsync(issue);
+        await _hubContext.Clients
+        .Group($"project-{projectId}")
+        .SendAsync("IssueDeleted", issueId);
     }
 
     public async Task<List<IssueResponseDto>> GetBacklogAsync(int projectId, int currentUserId)

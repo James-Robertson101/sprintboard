@@ -12,10 +12,6 @@ public class SprintBoardHub : Hub
             Context.ConnectionId,
             $"project-{projectId}"
         );
-
-        Console.WriteLine(
-            $"[SignalR] {Context.ConnectionId} joined project-{projectId}"
-        );
     }
 
     public async Task LeaveProject(string projectId)

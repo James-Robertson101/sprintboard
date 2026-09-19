@@ -12,7 +12,11 @@ using Microsoft.AspNetCore.HttpOverrides;
 using SprintBoard.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddScoped<TimestampInterceptor>(); 
 builder.Services.AddDbContext<AppDbContext>((sp,options) =>
     options.UseNpgsql(

@@ -11,6 +11,7 @@ import { getProjectMembers } from "../../../services/projectService";
 import BoardColumn from "../../../components/ui/BoardColumn";
 import IssueFormModal from "../../../components/ui/IssueFormModal";
 import { useProjectRoom } from "../../../signalr/useProjectRoom";
+import { useSignalR } from "../../../signalr/useSignalR";
 
 const COLUMNS: { status: IssueStatus; label: string }[] = [
   { status: "Todo", label: "To do" },
@@ -22,6 +23,7 @@ const COLUMNS: { status: IssueStatus; label: string }[] = [
 function ProjectBoard() {
   const { projectId } = useParams();
   useProjectRoom(projectId);
+  const { connection } = useSignalR();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [members, setMembers] = useState<Assignee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +69,37 @@ function ProjectBoard() {
     };
   }, [projectId]);
 
+  useEffect(() => {
+    if (!connection) return;
+
+    function handleIssueCreated(issue: Issue) {
+      setIssues((current) =>
+        current.some((i) => i.id === issue.id) ? current : [...current, issue],
+      );
+    }
+
+    function handleIssueUpdated(issue: Issue) {
+      console.log("Received IssueUpdated:", issue);
+      setIssues((current) =>
+        current.map((i) => (i.id === issue.id ? issue : i)),
+      );
+    }
+
+    function handleIssueDeleted(issueId: number) {
+      setIssues((current) => current.filter((i) => i.id !== issueId));
+    }
+
+    connection.on("IssueCreated", handleIssueCreated);
+    connection.on("IssueUpdated", handleIssueUpdated);
+    connection.on("IssueDeleted", handleIssueDeleted);
+
+    return () => {
+      connection.off("IssueCreated", handleIssueCreated);
+      connection.off("IssueUpdated", handleIssueUpdated);
+      connection.off("IssueDeleted", handleIssueDeleted);
+    };
+  }, [connection]);
+
   async function handleDropIssue(issueId: number, status: IssueStatus) {
     if (!projectId) return;
 
@@ -98,7 +131,11 @@ function ProjectBoard() {
   async function handleCreateIssue(payload: Parameters<typeof createIssue>[1]) {
     if (!projectId) return;
     const created = await createIssue(projectId, payload);
-    setIssues((current) => [...current, created]);
+    setIssues((current) =>
+      current.some((i) => i.id === created.id)
+        ? current
+        : [...current, created],
+    );
   }
 
   async function handleUpdateIssue(payload: Parameters<typeof updateIssue>[2]) {
