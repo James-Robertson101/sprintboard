@@ -17,4 +17,5 @@ public interface ISprintRepository
     void Delete(Sprint sprint);
 
     Task SaveChangesAsync();
+    Task<Sprint?> GetActiveSprintAsync(int projectId);
 }

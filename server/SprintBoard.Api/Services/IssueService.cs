@@ -59,7 +59,7 @@ public class IssueService : IIssueService
         return MapToDto(issue);
     }
 
-    public async Task<IssueResponseDto> CreateIssueAsync(int projectId, int userId, CreateIssueDto dto)
+     public async Task<IssueResponseDto> CreateIssueAsync(int projectId, int userId, CreateIssueDto dto)
     {
         await GetProjectAndVerifyMembershipAsync(projectId, userId);
 
@@ -68,14 +68,15 @@ public class IssueService : IIssueService
         {
             assignee = await GetAssigneeAndVerifyMembershipAsync(projectId, dto.AssigneeId.Value);
         }
-
+        var activeSprint = await _sprintRepository.GetActiveSprintAsync(projectId);
         var issue = new Issue
         {
             ProjectId = projectId,
+            SprintId = activeSprint?.Id,
             Name = dto.Name,
             Description = dto.Description,
             Priority = dto.Priority,
-            Status = IssueStatus.Todo,
+            Status = dto.Status,
             AssigneeId = assignee?.Id,
             Assignee = assignee,
             CreatedById = userId,
@@ -84,6 +85,9 @@ public class IssueService : IIssueService
 
         var created = await _issueRepository.CreateAsync(issue);
         var response = MapToDto(created);
+        Console.WriteLine(
+        $"[SignalR] Sending IssueCreated to project-{projectId}"
+);
         await _hubContext.Clients
         .Group($"project-{projectId}")
         .SendAsync("IssueCreated", response);
@@ -91,6 +95,7 @@ public class IssueService : IIssueService
         return response;
 
     }
+
 
     public async Task<IssueResponseDto> UpdateIssueAsync(int projectId, int issueId, int userId, UpdateIssueDto dto)
     {

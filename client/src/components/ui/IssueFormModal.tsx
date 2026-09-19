@@ -87,6 +87,7 @@ function IssueFormModal({
           description: description.trim() || null,
           priority,
           assigneeId: parsedAssigneeId,
+          status: status,
         });
       } else {
         await onUpdate({

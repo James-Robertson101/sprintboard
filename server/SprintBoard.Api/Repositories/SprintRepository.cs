@@ -60,4 +60,12 @@ public class SprintRepository : ISprintRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<Sprint?> GetActiveSprintAsync(int projectId)
+    {
+        return await _context.Sprints
+        .FirstOrDefaultAsync(s =>
+            s.ProjectId == projectId &&
+            s.Status == SprintStatus.Active);}
+
 }

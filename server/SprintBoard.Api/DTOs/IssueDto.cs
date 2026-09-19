@@ -6,7 +6,8 @@ public record CreateIssueDto(
     string Name,
     string? Description,
     Priority Priority,
-    int? AssigneeId
+    int? AssigneeId,
+    IssueStatus Status
 );
 
 public record UpdateIssueDto(

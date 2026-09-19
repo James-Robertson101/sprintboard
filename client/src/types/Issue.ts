@@ -22,12 +22,13 @@ export interface Issue {
 }
 
 // Mirrors CreateIssueDto
-export interface CreateIssuePayload {
+export type CreateIssuePayload = {
   name: string;
-  description?: string | null;
+  description: string | null;
   priority: Priority;
-  assigneeId?: number | null;
-}
+  assigneeId: number | null;
+  status: IssueStatus;
+};
 
 // Mirrors UpdateIssueDto
 export interface UpdateIssuePayload {
