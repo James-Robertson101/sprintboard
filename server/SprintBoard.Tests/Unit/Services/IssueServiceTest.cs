@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using SprintBoard.Api.DTOs;
 using SprintBoard.Api.Exceptions;
+using SprintBoard.Api.Hubs;
 using SprintBoard.Api.Models;
 using SprintBoard.Api.Repositories;
 using SprintBoard.Api.Services;
@@ -14,6 +17,12 @@ public class IssueServiceTests
     private readonly Mock<IProjectRepository> _projectRepositoryMock;
     private readonly Mock<ISprintRepository> _sprintRepositoryMock;
     private readonly Mock<IUserRepository> _userRepositoryMock;
+
+    // SignalR mocks: IHubContext -> IHubClients -> IClientProxy
+    private readonly Mock<IHubContext<SprintBoardHub>> _hubContextMock;
+    private readonly Mock<IHubClients> _hubClientsMock;
+    private readonly Mock<IClientProxy> _clientProxyMock;
+
     private readonly IssueService _sut; // system under test
 
     public IssueServiceTests()
@@ -22,14 +31,35 @@ public class IssueServiceTests
         _projectRepositoryMock = new Mock<IProjectRepository>();
         _userRepositoryMock = new Mock<IUserRepository>();
         _sprintRepositoryMock = new Mock<ISprintRepository>();
-        
+
+        _hubContextMock = new Mock<IHubContext<SprintBoardHub>>();
+        _hubClientsMock = new Mock<IHubClients>();
+        _clientProxyMock = new Mock<IClientProxy>();
+
+        _hubContextMock.Setup(h => h.Clients).Returns(_hubClientsMock.Object);
+        _hubClientsMock
+            .Setup(c => c.Group(It.IsAny<string>()))
+            .Returns(_clientProxyMock.Object);
+
+        // SendAsync(...) is an extension method that ends up calling SendCoreAsync,
+        // so SendCoreAsync is the method we set up and verify.
+        _clientProxyMock
+            .Setup(p => p.SendCoreAsync(
+                It.IsAny<string>(),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         _sut = new IssueService(
             _issueRepositoryMock.Object,
             _projectRepositoryMock.Object,
             _userRepositoryMock.Object,
-            _sprintRepositoryMock.Object);
+            _sprintRepositoryMock.Object,
+            _hubContextMock.Object,
+            NullLogger<IssueService>.Instance);
     }
 
+    // --- Helpers ---
 
     private static Project CreateProject(int projectId, params int[] memberUserIds)
     {
@@ -72,6 +102,24 @@ public class IssueServiceTests
             CreatedById = 1,
             CreatedAt = DateTime.UtcNow
         };
+    }
+
+    private void VerifyBroadcast(int projectId, string method, Times? times = null)
+    {
+        _hubClientsMock.Verify(c => c.Group($"project-{projectId}"), times ?? Times.Once());
+        _clientProxyMock.Verify(
+            p => p.SendCoreAsync(method, It.IsAny<object?[]>(), It.IsAny<CancellationToken>()),
+            times ?? Times.Once());
+    }
+
+    private void VerifyNothingBroadcast()
+    {
+        _clientProxyMock.Verify(
+            p => p.SendCoreAsync(
+                It.IsAny<string>(),
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never());
     }
 
     // --- GetIssuesForProjectAsync ---
@@ -230,13 +278,13 @@ public class IssueServiceTests
     // --- CreateIssueAsync ---
 
     [Fact]
-    public async Task CreateIssueAsync_WithNoAssignee_CreatesIssueWithTodoStatus()
+    public async Task CreateIssueAsync_WithNoAssignee_CreatesIssueWithGivenStatus()
     {
         // Arrange
         const int projectId = 1;
         const int userId = 10;
         var project = CreateProject(projectId, userId);
-        var dto = new CreateIssueDto("New feature", "Description here", Priority.High, null);
+        var dto = new CreateIssueDto("New feature", "Description here", Priority.High, null, IssueStatus.Todo);
 
         _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
         _issueRepositoryMock
@@ -272,7 +320,7 @@ public class IssueServiceTests
         const int assigneeId = 20;
         var project = CreateProject(projectId, userId, assigneeId);
         var assignee = CreateUser(assigneeId, "Grace Hopper");
-        var dto = new CreateIssueDto("New feature", "Description here", Priority.Low, assigneeId);
+        var dto = new CreateIssueDto("New feature", "Description here", Priority.Low, assigneeId, IssueStatus.Todo);
 
         _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(assigneeId)).ReturnsAsync(assignee);
@@ -293,13 +341,109 @@ public class IssueServiceTests
     }
 
     [Fact]
+    public async Task CreateIssueAsync_WhenActiveSprintExists_AssignsIssueToActiveSprint()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int userId = 10;
+        const int sprintId = 7;
+        var project = CreateProject(projectId, userId);
+        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, null, IssueStatus.Todo);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _sprintRepositoryMock
+            .Setup(r => r.GetActiveSprintAsync(projectId))
+            .ReturnsAsync(new Sprint { Id = sprintId, ProjectId = projectId });
+        _issueRepositoryMock
+            .Setup(r => r.CreateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.CreateIssueAsync(projectId, userId, dto);
+
+        // Assert
+        _issueRepositoryMock.Verify(r => r.CreateAsync(It.Is<Issue>(i =>
+            i.SprintId == sprintId)), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateIssueAsync_WhenCreatedAsTodo_LeavesCompletedAtNull()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, null, IssueStatus.Todo);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock
+            .Setup(r => r.CreateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.CreateIssueAsync(projectId, userId, dto);
+
+        // Assert
+        _issueRepositoryMock.Verify(r => r.CreateAsync(It.Is<Issue>(i =>
+            i.CompletedAt == null)), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateIssueAsync_WhenCreatedAsDone_SetsCompletedAt()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var dto = new CreateIssueDto("Already done", "Description", Priority.Medium, null, IssueStatus.Done);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock
+            .Setup(r => r.CreateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.CreateIssueAsync(projectId, userId, dto);
+
+        // Assert
+        _issueRepositoryMock.Verify(r => r.CreateAsync(It.Is<Issue>(i =>
+            i.Status == IssueStatus.Done &&
+            i.CompletedAt != null)), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateIssueAsync_OnSuccess_BroadcastsIssueCreatedToProjectGroup()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, null, IssueStatus.Todo);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock
+            .Setup(r => r.CreateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.CreateIssueAsync(projectId, userId, dto);
+
+        // Assert
+        _hubClientsMock.Verify(c => c.Group($"project-{projectId}"), Times.Once);
+        _clientProxyMock.Verify(p => p.SendCoreAsync(
+            "IssueCreated",
+            It.Is<object?[]>(args => args.Length == 1 && args[0] is IssueResponseDto),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task CreateIssueAsync_WhenAssigneeDoesNotExist_ThrowsNotFoundException()
     {
         // Arrange
         const int projectId = 1;
         const int userId = 10;
         var project = CreateProject(projectId, userId);
-        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, 999);
+        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, 999, IssueStatus.Todo);
 
         _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((User?)null);
@@ -309,6 +453,7 @@ public class IssueServiceTests
             () => _sut.CreateIssueAsync(projectId, userId, dto));
 
         _issueRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 
     [Fact]
@@ -320,7 +465,7 @@ public class IssueServiceTests
         const int assigneeId = 20;
         var project = CreateProject(projectId, userId); // assignee not included
         var assignee = CreateUser(assigneeId, "Outsider");
-        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, assigneeId);
+        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, assigneeId, IssueStatus.Todo);
 
         _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(assigneeId)).ReturnsAsync(assignee);
@@ -330,6 +475,7 @@ public class IssueServiceTests
             () => _sut.CreateIssueAsync(projectId, userId, dto));
 
         _issueRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 
     [Fact]
@@ -338,7 +484,7 @@ public class IssueServiceTests
         // Arrange
         const int projectId = 1;
         var project = CreateProject(projectId, 999);
-        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, null);
+        var dto = new CreateIssueDto("New feature", "Description", Priority.Medium, null, IssueStatus.Todo);
 
         _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
 
@@ -347,6 +493,7 @@ public class IssueServiceTests
             () => _sut.CreateIssueAsync(projectId, 10, dto));
 
         _issueRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 
     // --- UpdateIssueAsync ---
@@ -438,6 +585,139 @@ public class IssueServiceTests
     }
 
     [Fact]
+    public async Task UpdateIssueAsync_WhenMovedToDone_SetsCompletedAt()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var existingIssue = CreateIssue(issueId, projectId, status: IssueStatus.InProgress);
+        var dto = new UpdateIssueDto("Name", "Description", Priority.Medium, IssueStatus.Done, null);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(existingIssue);
+        _issueRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        var before = DateTime.UtcNow;
+
+        // Act
+        await _sut.UpdateIssueAsync(projectId, issueId, userId, dto);
+
+        var after = DateTime.UtcNow;
+
+        // Assert
+        Assert.NotNull(existingIssue.CompletedAt);
+        Assert.InRange(existingIssue.CompletedAt!.Value, before, after);
+    }
+
+    [Fact]
+    public async Task UpdateIssueAsync_WhenReopenedFromDone_ClearsCompletedAt()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var existingIssue = CreateIssue(issueId, projectId, status: IssueStatus.Done);
+        existingIssue.CompletedAt = DateTime.UtcNow.AddDays(-1);
+        var dto = new UpdateIssueDto("Name", "Description", Priority.Medium, IssueStatus.InProgress, null);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(existingIssue);
+        _issueRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.UpdateIssueAsync(projectId, issueId, userId, dto);
+
+        // Assert
+        Assert.Null(existingIssue.CompletedAt);
+    }
+
+    [Fact]
+    public async Task UpdateIssueAsync_WhenAlreadyDoneAndStaysDone_KeepsOriginalCompletedAt()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var originalCompletedAt = DateTime.UtcNow.AddDays(-3);
+        var existingIssue = CreateIssue(issueId, projectId, status: IssueStatus.Done);
+        existingIssue.CompletedAt = originalCompletedAt;
+        // Only the name changes; status stays Done.
+        var dto = new UpdateIssueDto("Renamed", "Description", Priority.Medium, IssueStatus.Done, null);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(existingIssue);
+        _issueRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.UpdateIssueAsync(projectId, issueId, userId, dto);
+
+        // Assert
+        Assert.Equal(originalCompletedAt, existingIssue.CompletedAt);
+    }
+
+    [Fact]
+    public async Task UpdateIssueAsync_WhenStatusChangesBetweenNonDoneStates_LeavesCompletedAtNull()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var existingIssue = CreateIssue(issueId, projectId, status: IssueStatus.Todo);
+        var dto = new UpdateIssueDto("Name", "Description", Priority.Medium, IssueStatus.InReview, null);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(existingIssue);
+        _issueRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.UpdateIssueAsync(projectId, issueId, userId, dto);
+
+        // Assert
+        Assert.Null(existingIssue.CompletedAt);
+    }
+
+    [Fact]
+    public async Task UpdateIssueAsync_OnSuccess_BroadcastsIssueUpdatedToProjectGroup()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var existingIssue = CreateIssue(issueId, projectId);
+        var dto = new UpdateIssueDto("Name", "Description", Priority.Medium, IssueStatus.Todo, null);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(existingIssue);
+        _issueRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.UpdateIssueAsync(projectId, issueId, userId, dto);
+
+        // Assert
+        _hubClientsMock.Verify(c => c.Group($"project-{projectId}"), Times.Once);
+        _clientProxyMock.Verify(p => p.SendCoreAsync(
+            "IssueUpdated",
+            It.Is<object?[]>(args => args.Length == 1 && args[0] is IssueResponseDto),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task UpdateIssueAsync_WhenIssueDoesNotExist_ThrowsNotFoundException()
     {
         // Arrange
@@ -454,6 +734,7 @@ public class IssueServiceTests
             () => _sut.UpdateIssueAsync(projectId, 999, userId, dto));
 
         _issueRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 
     [Fact]
@@ -474,6 +755,7 @@ public class IssueServiceTests
             () => _sut.UpdateIssueAsync(projectId, 5, userId, dto));
 
         _issueRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 
     [Fact]
@@ -498,6 +780,7 @@ public class IssueServiceTests
             () => _sut.UpdateIssueAsync(projectId, issueId, userId, dto));
 
         _issueRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 
     // --- DeleteIssueAsync ---
@@ -523,6 +806,30 @@ public class IssueServiceTests
     }
 
     [Fact]
+    public async Task DeleteIssueAsync_OnSuccess_BroadcastsIssueDeletedWithIssueId()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var issue = CreateIssue(issueId, projectId);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(issue);
+
+        // Act
+        await _sut.DeleteIssueAsync(projectId, issueId, userId);
+
+        // Assert
+        _hubClientsMock.Verify(c => c.Group($"project-{projectId}"), Times.Once);
+        _clientProxyMock.Verify(p => p.SendCoreAsync(
+            "IssueDeleted",
+            It.Is<object?[]>(args => args.Length == 1 && args[0] is int && (int)args[0]! == issueId),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task DeleteIssueAsync_WhenIssueDoesNotExist_ThrowsNotFoundException()
     {
         // Arrange
@@ -538,6 +845,7 @@ public class IssueServiceTests
             () => _sut.DeleteIssueAsync(projectId, 999, userId));
 
         _issueRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 
     [Fact]
@@ -557,6 +865,7 @@ public class IssueServiceTests
             () => _sut.DeleteIssueAsync(projectId, 5, userId));
 
         _issueRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 
     [Fact]
@@ -574,5 +883,152 @@ public class IssueServiceTests
 
         _issueRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<int>()), Times.Never);
         _issueRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<Issue>()), Times.Never);
+    }
+
+    // --- AssignIssueToSprintAsync ---
+
+    [Fact]
+    public async Task AssignIssueToSprintAsync_WithValidSprint_AssignsIssueAndBroadcasts()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        const int sprintId = 3;
+        var project = CreateProject(projectId, userId);
+        var issue = CreateIssue(issueId, projectId);
+        var sprint = new Sprint { Id = sprintId, ProjectId = projectId };
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(issue);
+        _sprintRepositoryMock.Setup(r => r.GetByIdAsync(projectId, sprintId)).ReturnsAsync(sprint);
+        _issueRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.AssignIssueToSprintAsync(projectId, issueId, userId, new AssignIssueToSprintDto(sprintId));
+
+        // Assert
+        Assert.Equal(sprintId, issue.SprintId);
+        Assert.NotNull(issue.UpdatedAt);
+        _issueRepositoryMock.Verify(r => r.UpdateAsync(issue), Times.Once);
+        VerifyBroadcast(projectId, "IssueUpdated");
+    }
+
+    [Fact]
+    public async Task AssignIssueToSprintAsync_WithNullSprintId_MovesIssueToBacklog()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var issue = CreateIssue(issueId, projectId);
+        issue.SprintId = 3;
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(issue);
+        _issueRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.AssignIssueToSprintAsync(projectId, issueId, userId, new AssignIssueToSprintDto(null));
+
+        // Assert
+        Assert.Null(issue.SprintId);
+        _sprintRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignIssueToSprintAsync_WhenIssueIsDone_DoesNotChangeCompletedAt()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        const int sprintId = 3;
+        var project = CreateProject(projectId, userId);
+        var originalCompletedAt = DateTime.UtcNow.AddDays(-2);
+        var issue = CreateIssue(issueId, projectId, status: IssueStatus.Done);
+        issue.CompletedAt = originalCompletedAt;
+        var sprint = new Sprint { Id = sprintId, ProjectId = projectId };
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(issue);
+        _sprintRepositoryMock.Setup(r => r.GetByIdAsync(projectId, sprintId)).ReturnsAsync(sprint);
+        _issueRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Issue>()))
+            .ReturnsAsync((Issue i) => i);
+
+        // Act
+        await _sut.AssignIssueToSprintAsync(projectId, issueId, userId, new AssignIssueToSprintDto(sprintId));
+
+        // Assert
+        Assert.Equal(originalCompletedAt, issue.CompletedAt);
+    }
+
+    [Fact]
+    public async Task AssignIssueToSprintAsync_WhenSprintDoesNotExist_ThrowsNotFoundException()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int issueId = 5;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var issue = CreateIssue(issueId, projectId);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(issueId)).ReturnsAsync(issue);
+        _sprintRepositoryMock
+            .Setup(r => r.GetByIdAsync(projectId, 999))
+            .ReturnsAsync((Sprint?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _sut.AssignIssueToSprintAsync(projectId, issueId, userId, new AssignIssueToSprintDto(999)));
+
+        _issueRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
+    }
+
+    [Fact]
+    public async Task AssignIssueToSprintAsync_WhenIssueDoesNotExist_ThrowsNotFoundException()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Issue?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _sut.AssignIssueToSprintAsync(projectId, 999, userId, new AssignIssueToSprintDto(1)));
+
+        _issueRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
+    }
+
+    [Fact]
+    public async Task AssignIssueToSprintAsync_WhenIssueBelongsToDifferentProject_ThrowsNotFoundException()
+    {
+        // Arrange
+        const int projectId = 1;
+        const int userId = 10;
+        var project = CreateProject(projectId, userId);
+        var issue = CreateIssue(5, projectId: 999);
+
+        _projectRepositoryMock.Setup(r => r.GetProjectByIdAsync(projectId)).ReturnsAsync(project);
+        _issueRepositoryMock.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(issue);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _sut.AssignIssueToSprintAsync(projectId, 5, userId, new AssignIssueToSprintDto(1)));
+
+        _issueRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Issue>()), Times.Never);
+        VerifyNothingBroadcast();
     }
 }

@@ -99,6 +99,8 @@ builder.Services.AddScoped<IIssueService,IssueService>();
 builder.Services.AddScoped<IIssueRepository,IssueRepository>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddControllers()
 .AddJsonOptions(options =>
