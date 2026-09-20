@@ -4,6 +4,10 @@ A full-stack, real-time project management app inspired by Jira. Teams create pr
 
 **Live Demo:** [calm-tree-0f811550f.6.azurestaticapps.net](https://calm-tree-0f811550f.6.azurestaticapps.net/)
 
+
+https://github.com/user-attachments/assets/944f36ab-aaa1-4974-bb21-23c8a0c02a9a
+
+
 ---
 
 ## Highlights
