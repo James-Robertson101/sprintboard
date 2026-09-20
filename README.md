@@ -4,8 +4,6 @@ A full-stack, real-time project management app inspired by Jira. Teams create pr
 
 **Live Demo:** [calm-tree-0f811550f.6.azurestaticapps.net](https://calm-tree-0f811550f.6.azurestaticapps.net/)
 
-<!-- TODO: add a GIF here of two browser windows side by side, dragging a card in one and watching it move in the other. It is the single best thing you can show. -->
-
 ---
 
 ## Highlights
@@ -97,12 +95,6 @@ Enums are serialized as strings in the SignalR JSON protocol as well as in the R
 
 Hub authentication reuses the same HttpOnly `access_token` cookie as the REST API. The JWT bearer handler reads the token from the cookie on every request, including the hub's negotiate and WebSocket connections, so the token never has to be put in a query string (where it would end up in logs).
 
-<!-- TODO: fill in the specifics below.
-- Once you've added a project-membership check to JoinProject (see notes), say so here: "JoinProject verifies membership before adding the connection to the group."
-- Where are broadcasts sent from (services via IHubContext<SprintBoardHub>)? Do you send the full IssueResponseDto or just an ID + change type?
-- How does the sender avoid double-applying its own optimistic update?
--->
-
 ### Optimistic drag-and-drop
 
 Dragging a card updates the UI immediately and sends a `PUT` to persist the new status. If the request fails, the change is rolled back locally. Because SignalR also pushes the change to other clients, all connected members converge on the same board state.
@@ -117,8 +109,6 @@ Issues without a sprint form the project's **backlog**. Sprints are created, edi
 
 The reports page shows a sprint summary, a burndown chart for a single sprint, and velocity across the last few completed sprints (default 6, clamped to 1-20). The app has no story points, so all three use **issue counts** as the unit of work. That's a deliberate simplification rather than a limitation: the charts are only as meaningful as the estimate behind them, and equal-weight issues are honest about that.
 
-<!-- TODO: one or two sentences on how burndown is computed. Status-change history, a Done timestamp, or a daily snapshot? -->
-
 ### Soft deletion of users
 
 Users are never physically deleted. An `IsDeleted` flag is set and a global query filter in `AppDbContext` hides them from every query:
@@ -128,8 +118,6 @@ modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
 ```
 
 This keeps historical data intact (issues and comments a user authored remain valid) and means individual queries can't forget to exclude deleted users. There are two deletion paths, both going through a `UserDeletionService`: admins can delete any user, and users can delete their own account. If deletion isn't allowed, the API responds `409 Conflict` with a message explaining why. Where a deleted user's data must still be read (for example, showing who created an old issue), the filter can be bypassed explicitly with `IgnoreQueryFilters()`.
-
-<!-- TODO: what does the service block? (e.g. deleting the sole owner of a project, an admin deleting themselves) One sentence here is a good talking point. -->
 
 ### Cookie-based JWT with two authentication schemes
 
@@ -248,8 +236,6 @@ Issues move through `Todo → InProgress → InReview → Done`. New issues alwa
 | `/hub/sprintboard` | `JoinProject(projectId)`  | Subscribe to a project's live updates     |
 | `/hub/sprintboard` | `LeaveProject(projectId)` | Unsubscribe from a project's live updates |
 
-<!-- TODO: list the server-to-client events (e.g. IssueCreated, IssueUpdated, IssueDeleted) with their payloads. -->
-
 ---
 
 ## Data Model
@@ -283,11 +269,9 @@ GitHub Actions runs on every push and pull request to `main`:
 - **Backend:** restores and builds the API and test project against .NET 10, then runs `dotnet test`.
 - **Frontend:** `npm ci`, lint, then build with Node 22.
 
-There's no automated deployment; deploys to Azure are manual.
+Automated deployment via azure.
 
 > **Note on demo data:** on every startup `Program.cs` runs migrations and re-seeds the database from scratch (`DataSeeder.SeedAsync`), and `POST /api/system/reseed` re-seeds it again when a reseed is due. Changes made during a live demo therefore reset, which is intentional, to keep the demo in a known-good state.
-
-<!-- TODO: how often is a reseed "due", and what calls the endpoint (the frontend on load? a scheduled job?) -->
 
 ---
 
