@@ -14,6 +14,13 @@ public static class DataSeeder
 
     private static readonly SemaphoreSlim SeedLock = new(1, 1);
 
+    private sealed record SprintPlan(
+        string Name,
+        string Goal,
+        SprintStatus Status,
+        int Total,
+        int Done);
+
     /// <summary>
     /// Reseeds only if more than MinInterval has passed since the last reseed.
     /// Safe to call on every page load without wiping data out from under an active visitor.
@@ -144,7 +151,6 @@ public static class DataSeeder
 
         await context.SaveChangesAsync();
 
-
         // PROJECT MEMBERS
         Console.WriteLine("[Seeder] Seeding project members...");
 
@@ -203,64 +209,93 @@ public static class DataSeeder
         await context.SaveChangesAsync();
 
         // SPRINTS
+        //
+        // Six completed sprints (so velocity has a real trend), one active
+        // sprint that is ~10 days into a 14-day cycle (so burndown has shape),
+        // and one planned sprint. Sprints run back-to-back, 14 days each.
         Console.WriteLine("[Seeder] Seeding sprints...");
 
+        const int sprintLengthDays = 14;
+
         var now = DateTime.UtcNow;
+        var today = now.Date;
 
-        var sprint1 = new Sprint
+        var plans = new List<SprintPlan>
         {
-            ProjectId = project.Id,
-            Name = "Sprint 1",
-            Goal = "Set up the core project infrastructure",
-            StartDate = now.AddDays(-14),
-            EndDate = now.AddDays(-7),
-            Status = SprintStatus.Completed
+            new("Sprint 1", "Set up the core project infrastructure",   SprintStatus.Completed, Total: 8,  Done: 5),
+            new("Sprint 2", "Ship authentication and project management", SprintStatus.Completed, Total: 9,  Done: 7),
+            new("Sprint 3", "Build the Kanban board",                   SprintStatus.Completed, Total: 10, Done: 7),
+            new("Sprint 4", "Add filtering and real-time updates",      SprintStatus.Completed, Total: 11, Done: 9),
+            new("Sprint 5", "Harden the API and improve test coverage", SprintStatus.Completed, Total: 12, Done: 10),
+            new("Sprint 6", "Polish the board and backlog experience",  SprintStatus.Completed, Total: 11, Done: 10),
+            new("Sprint 7", "Ship sprint reports: burndown and velocity", SprintStatus.Active,  Total: 12, Done: 7),
+            new("Sprint 8", "Prepare for launch and stabilise",         SprintStatus.Planned,   Total: 6,  Done: 0)
         };
 
-        var sprint2 = new Sprint
-        {
-            ProjectId = project.Id,
-            Name = "Sprint 2",
-            Goal = "Build the main issue management features",
-            StartDate = now.AddDays(-6),
-            EndDate = now.AddDays(7),
-            Status = SprintStatus.Active
-        };
+        var completedCount = plans.Count(p => p.Status == SprintStatus.Completed);
 
-        var sprint3 = new Sprint
-        {
-            ProjectId = project.Id,
-            Name = "Sprint 3",
-            Goal = "Improve reporting and polish the application",
-            StartDate = now.AddDays(8),
-            EndDate = now.AddDays(21),
-            Status = SprintStatus.Planned
-        };
+        // The active sprint started 9 days ago, so today is day 10 of 14.
+        var activeStart = today.AddDays(-9);
+        var firstStart = activeStart.AddDays(-sprintLengthDays * completedCount);
 
-        context.Sprints.AddRange(
-            sprint1,
-            sprint2,
-            sprint3);
+        var sprints = plans
+            .Select((plan, i) =>
+            {
+                var start = firstStart.AddDays(i * sprintLengthDays);
+
+                return new Sprint
+                {
+                    ProjectId = project.Id,
+                    Name = plan.Name,
+                    Goal = plan.Goal,
+                    StartDate = start,
+                    EndDate = start.AddDays(sprintLengthDays - 1),
+                    Status = plan.Status
+                };
+            })
+            .ToList();
+
+        context.Sprints.AddRange(sprints);
 
         await context.SaveChangesAsync();
 
         // ISSUES
         Console.WriteLine("[Seeder] Seeding issues...");
 
-        var assignees = new[]
+        var random = new Random(42);
+
+        // Weighted so the board has a few urgent items and lots of mediums,
+        // instead of a uniform spread.
+        var assigneePool = new[]
         {
             alice,
-            bob,
-            carol,
-            dave,
-            erin,
-            frank
+            bob, bob,
+            carol, carol,
+            dave, dave,
+            erin, erin,
+            frank, frank
         };
 
-        var statuses = Enum.GetValues<IssueStatus>();
-        var priorities = Enum.GetValues<Priority>();
+        User PickUser() => assigneePool[random.Next(assigneePool.Length)];
 
-        var issueTitles = new[]
+        Priority RandomPriority()
+        {
+            var roll = random.Next(100);
+            return roll < 25 ? Priority.High
+                 : roll < 70 ? Priority.Medium
+                 : Priority.Low;
+        }
+
+        DateTime Cap(DateTime value) => value > now ? now : value;
+
+        // Later-in-sprint bias: most work lands in the second half, which is
+        // what a real burndown looks like (slow start, then a push).
+        int SkewedDay() =>
+            (int)Math.Round(1 + 12 * Math.Sqrt(random.NextDouble()));
+
+        // Titles: hand-written ones first (they line up with the early
+        // sprint goals), then generated ones so we never run out.
+        var baseTitles = new[]
         {
             "Set up CI pipeline",
             "Add GitHub Actions for build + test",
@@ -284,45 +319,169 @@ public static class DataSeeder
             "Write seed script for demo data"
         };
 
-        var random = new Random(42);
+        var verbs = new[]
+        {
+            "Add", "Fix", "Refactor", "Improve",
+            "Write tests for", "Document", "Optimize"
+        };
+
+        var subjects = new[]
+        {
+            "sprint planning view", "backlog drag-and-drop", "issue detail modal",
+            "comment editing", "project settings page", "member invitations",
+            "keyboard shortcuts", "issue search", "board column limits",
+            "profile page", "notification preferences", "SignalR reconnect handling",
+            "session expiry handling", "loading skeletons", "empty states",
+            "CSV export", "audit log", "issue labels", "due dates",
+            "burndown accuracy", "velocity report", "mobile layout",
+            "accessibility labels", "API pagination", "soft-delete cleanup",
+            "Google sign-in flow", "role permissions", "sprint completion flow"
+        };
+
+        var usedTitles = new HashSet<string>(baseTitles);
+        var titleIndex = 0;
+
+        string NextTitle()
+        {
+            if (titleIndex < baseTitles.Length)
+                return baseTitles[titleIndex++];
+
+            while (true)
+            {
+                var title =
+                    $"{verbs[random.Next(verbs.Length)]} {subjects[random.Next(subjects.Length)]}";
+
+                if (usedTitles.Add(title))
+                    return title;
+            }
+        }
+
+        // Scripted completions for the active sprint (day offsets from its
+        // start). Slightly behind the ideal line, with a quiet weekend and a
+        // push mid-sprint, so the burndown chart has visible character.
+        var activeDoneOffsets = new[] { 1, 2, 4, 4, 5, 7, 8 };
+
+        var activeLeftovers = new[]
+        {
+            IssueStatus.InProgress,
+            IssueStatus.InProgress,
+            IssueStatus.InReview,
+            IssueStatus.InReview,
+            IssueStatus.Todo
+        };
+
+        // Unfinished work carried out of a completed sprint.
+        var leftoverPool = new[]
+        {
+            IssueStatus.Todo,
+            IssueStatus.InProgress,
+            IssueStatus.InReview
+        };
 
         var issues = new List<Issue>();
 
-        for (int i = 0; i < issueTitles.Length; i++)
+        for (int s = 0; s < sprints.Count; s++)
         {
-            var createdBy =
-                assignees[random.Next(assignees.Length)];
+            var sprint = sprints[s];
+            var plan = plans[s];
 
-            var assignee =
-                random.Next(0, 5) == 0
-                    ? null
-                    : assignees[random.Next(assignees.Length)];
+            var doneOffsets = sprint.Status == SprintStatus.Active
+                ? activeDoneOffsets
+                : Enumerable.Range(0, plan.Done)
+                    .Select(_ => SkewedDay())
+                    .OrderBy(d => d)
+                    .ToArray();
 
-            // Roughly distribute issues:
-            int? sprintId = i switch
+            for (int j = 0; j < plan.Total; j++)
             {
-                < 5 => sprint1.Id,
-                < 13 => sprint2.Id,
-                < 16 => sprint3.Id,
-                _ => null
-            };
+                var isDone = j < doneOffsets.Length;
 
+                IssueStatus status;
+                if (isDone)
+                {
+                    status = IssueStatus.Done;
+                }
+                else if (sprint.Status == SprintStatus.Planned)
+                {
+                    status = IssueStatus.Todo;
+                }
+                else if (sprint.Status == SprintStatus.Active)
+                {
+                    status = activeLeftovers[(j - doneOffsets.Length) % activeLeftovers.Length];
+                }
+                else
+                {
+                    status = leftoverPool[random.Next(leftoverPool.Length)];
+                }
+
+                // Issues are created before their sprint begins (planning),
+                // except for the planned sprint, whose start is in the future.
+                var createdAt = sprint.Status == SprintStatus.Planned
+                    ? now.AddDays(-random.Next(1, 8))
+                    : sprint.StartDate
+                        .AddDays(-random.Next(1, 6))
+                        .AddHours(9 + random.Next(0, 8));
+
+                DateTime? completedAt = isDone
+                    ? Cap(sprint.StartDate
+                        .AddDays(doneOffsets[j])
+                        .AddHours(9 + random.Next(0, 9)))
+                    : null;
+
+                DateTime? updatedAt = isDone
+                    ? completedAt
+                    : sprint.Status == SprintStatus.Planned
+                        ? null
+                        : Cap(createdAt.AddDays(random.Next(1, 5)));
+
+                // Started work always has an owner; untouched work is
+                // sometimes still unassigned.
+                User? assignee;
+                if (status != IssueStatus.Todo)
+                {
+                    assignee = PickUser();
+                }
+                else
+                {
+                    var unassignedChance =
+                        sprint.Status == SprintStatus.Planned ? 60 : 30;
+
+                    assignee = random.Next(100) < unassignedChance
+                        ? null
+                        : PickUser();
+                }
+
+                issues.Add(new Issue
+                {
+                    ProjectId = project.Id,
+                    SprintId = sprint.Id,
+                    Name = NextTitle(),
+                    Description = $"Demo issue seeded for {sprint.Name}.",
+                    Status = status,
+                    Priority = RandomPriority(),
+                    CreatedById = users[random.Next(users.Count)].Id,
+                    AssigneeId = assignee?.Id,
+                    CreatedAt = createdAt,
+                    UpdatedAt = updatedAt,
+                    CompletedAt = completedAt
+                });
+            }
+        }
+
+        // Backlog: not in any sprint, mostly unassigned.
+        for (int b = 0; b < 8; b++)
+        {
             issues.Add(new Issue
             {
                 ProjectId = project.Id,
-                SprintId = sprintId,
-                Name = issueTitles[i],
-                Description =
-                    $"Auto-generated demo issue #{i + 1}",
-                Status =
-                    statuses[random.Next(statuses.Length)],
-                Priority =
-                    priorities[random.Next(priorities.Length)],
-                CreatedById = createdBy.Id,
-                AssigneeId = assignee?.Id,
-                CreatedAt =
-                    DateTime.UtcNow.AddDays(
-                        -random.Next(1, 30))
+                SprintId = null,
+                Name = NextTitle(),
+                Description = "Backlog item waiting to be scheduled.",
+                Status = IssueStatus.Todo,
+                Priority = RandomPriority(),
+                CreatedById = users[random.Next(users.Count)].Id,
+                AssigneeId = random.Next(100) < 70 ? null : PickUser().Id,
+                CreatedAt = now.AddDays(-random.Next(1, 20))
             });
         }
 
@@ -353,26 +512,21 @@ public static class DataSeeder
         {
             var commentCount = random.Next(0, 4);
 
+            // Comments never post-date the issue's completion (or now).
+            var limit = issue.CompletedAt ?? now;
+
             for (int c = 0; c < commentCount; c++)
             {
-                var author =
-                    assignees[random.Next(assignees.Length)];
+                var author = users[random.Next(users.Count)];
 
-                var createdAt =
-                    issue.CreatedAt.AddHours(
-                        random.Next(1, 72));
+                var createdAt = issue.CreatedAt.AddHours(random.Next(1, 72));
 
                 comments.Add(new Comment
                 {
                     IssueId = issue.Id,
                     AuthorId = author.Id,
-                    Content =
-                        sampleComments[
-                            random.Next(sampleComments.Length)],
-                    CreatedAt =
-                        createdAt > DateTime.UtcNow
-                            ? DateTime.UtcNow
-                            : createdAt
+                    Content = sampleComments[random.Next(sampleComments.Length)],
+                    CreatedAt = createdAt > limit ? limit : createdAt
                 });
             }
         }

@@ -13,6 +13,7 @@ import Backlog from "./pages/projects/project/Backlog.tsx";
 import ProjectSettings from "./pages/projects/project/ProjectSettings/ProjectSettings.tsx";
 import Profile from "./pages/profile/Profile.tsx";
 import AppLayout from "./components/layout/AppLayout.tsx";
+import Reports from "./pages/projects/project/Reports.tsx";
 import { AuthGatedSignalR } from "./signalr/AuthGatedSignalR.tsx";
 
 import CreateProject from "./pages/projects/CreateProject.tsx";
@@ -47,7 +48,7 @@ function App() {
                 <Route path="board" element={<ProjectBoard />} />
                 <Route path="backlog" element={<Backlog />} />
                 <Route path="sprints" element={<Sprints />} />
-                <Route path="reports" element={<ProjectBoard />} />
+                <Route path="reports" element={<Reports />} />
                 <Route path="projectSettings" element={<ProjectSettings />} />
               </Route>
             </Route>
